@@ -44,7 +44,7 @@ wait_for() {  # log ok-marker fail-marker pid
     local log=$1 ok=$2 fail=$3 pid=$4 t
     for ((t = 0; t < timeout; t += 5)); do
         grep -qa "$ok" "$log" && { echo "  ok after ~${t}s"; return 0; }
-        grep -qa "$fail" "$log" && { echo "  FAIL"; grep -a "MPIREOS_" "$log" | tail -n 60; return 1; }
+        grep -qaE "$fail|Falling back to interactive prompt|Kernel panic" "$log" && { echo "  FAIL"; grep -a "MPIREOS_" "$log" | tail -n 60; return 1; }
         kill -0 "$pid" 2>/dev/null || { echo "  QEMU exited"; tail -n 60 "$log"; return 1; }
         sleep 5
     done
