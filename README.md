@@ -18,7 +18,7 @@ MpireOS is a US-based, open source Linux distribution focused on a polished, coh
 | Base | Arch Linux (x86_64) |
 | Package channels | `testing` and `stable`, both promoted from dated Arch snapshots |
 | Filesystem | Btrfs with snapper and boot-menu rollback |
-| Desktop | Mpire Desktop, MpireOS's own Qt 6 / QML desktop environment, on the KWin Wayland compositor |
+| Desktop | Mpire Desktop, MpireOS's own desktop environment: Qt 6 / QML shell and apps on its own wlroots-based compositor |
 | Installer | Mpire Setup, MpireOS's own guided graphical installer |
 | Image build | archiso, built in GitHub Actions |
 

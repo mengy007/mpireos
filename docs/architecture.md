@@ -8,14 +8,14 @@ Status: draft, v0.0. This document describes how MpireOS is built and why. Open 
 2. **Arch ecosystem, calm updates.** Access to Arch's packages, the AUR, and the Arch Wiki, without the breakage risk of tracking Arch directly.
 3. **Every change is reversible.** A bad update costs one reboot, not an evening.
 4. **US-based and auditable.** Public builds, signed releases, no telemetry by default.
-5. **Our own desktop, end to end.** Every part a user sees is MpireOS's own. Proven components are reused only underneath, where users never see them.
+5. **Our own desktop, end to end.** MpireOS builds every layer of the desktop, from the compositor up. Proven libraries are reused underneath (wlroots, Qt, system services).
 
 ## Non-goals for v0.1
 
 - Architectures other than x86_64
 - Secure Boot (planned before v1.0)
 - An immutable or image-based root filesystem
-- MpireOS's own browser, office suite, kernel fork, or Wayland compositor
+- MpireOS's own browser, office suite, or kernel fork
 
 ## Overview
 
@@ -24,7 +24,7 @@ Status: draft, v0.0. This document describes how MpireOS is built and why. Open 
 │ Mpire Desktop (Qt 6 / QML): greeter · lock · shell ·     │
 │ settings · welcome · files · software                    │
 ├─────────────────────────────────────────────────────────┤
-│ KWin Wayland compositor, with MpireOS look and effects   │
+│ mpire-compositor (C++ on wlroots): windows, input, blur  │
 ├─────────────────────────────────────────────────────────┤
 │ mpire packages: branding, configs, mpire-update, ...     │
 ├─────────────────────────────────────────────────────────┤
@@ -119,17 +119,25 @@ MpireOS ships its own desktop environment, **Mpire Desktop**. Everything a user 
 
 ### What we build and what we reuse
 
-The one layer we reuse is the **Wayland compositor**. Mpire Desktop runs on **KWin** (KDE's compositor) the same way it would run on any compositor: as the engine that draws windows and talks to the graphics drivers. Users never see KWin itself. Its look comes from MpireOS's own window decorations, effects, and animations.
+MpireOS builds the whole desktop, **including its own Wayland compositor**, `mpire-compositor`: the layer that draws every window, handles input, and talks to the graphics drivers. Owning it means the frosted bar, the floating dock, window animations, blur, and the overview all behave exactly as designed, with no compromise from someone else's compositor.
 
-This is the hardest, most hardware-sensitive layer to get right, and KWin has years of driver fixes, HDR, fractional scaling, multi-monitor, and accessibility work behind it. Reusing it lets MpireOS spend its effort on what people see. A compositor of our own (for example on wlroots, as Deepin did with Treeland) remains an option once the rest of the desktop is mature.
+**How it is built:**
+
+- **C++ on [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots)** (MIT license, hosted by freedesktop.org), the same foundation as Sway and Hyprland. wlroots handles the hard, hardware-specific parts (DRM/KMS, libinput, multi-GPU, XWayland) so our code focuses on window management, effects, and the scene.
+- **Small and crash-safe.** The compositor only manages windows, input, and effects. The shell, settings, greeter, and lock screen are separate Qt clients that talk to it over standard protocols (`wlr-layer-shell`, `ext-session-lock`, `xdg-activation`, `ext-foreign-toplevel-list`, `ext-background-effect` for blur). A shell crash never takes your windows down.
+- **Standard protocols only for apps**, so every Wayland, Qt, GTK, Flatpak, and X11 (through XWayland) app works normally.
+- **Effects in the compositor:** background blur, rounded corners and shadows on every window, open and close animations, workspaces, and an overview.
+
+**Interim:** because the shell talks to the compositor only through standard protocols, Mpire Desktop also runs on KWin. Development builds use KWin until `mpire-compositor` passes a hardware test matrix (Intel, AMD, and NVIDIA GPUs; laptops with hybrid graphics; HiDPI, fractional scaling, and multiple monitors). It then becomes the default, and KWin is dropped.
 
 | Layer | Mpire Desktop component | Notes |
 |---|---|---|
 | Login and lock | `mpire-greeter`, `mpire-lock` | SDDM greeter theme in QML; lock screen of our own |
 | Shell | `mpire-shell` | One process: top bar, dock, app launcher, notifications, quick settings, on-screen displays, task switcher. Uses the Wayland layer-shell protocol. |
 | Settings | `mpire-settings` | Our own control center. Talks to standard system services (NetworkManager, PipeWire, UPower, BlueZ, systemd, AccountsService, fwupd). |
-| Window look | `mpire-decoration`, `mpire-kwin-effects` | Window title bars, open/close/minimize animations, overview |
-| Session | `mpire-session` | Starts KWin and the shell, autostart, logout and shutdown |
+| Compositor | `mpire-compositor` | Window management, input, blur, shadows, animations, workspaces, overview |
+| Window look | `mpire-decoration` | Window title bars and controls, drawn by the compositor |
+| Session | `mpire-session` | Starts the compositor and the shell, autostart, logout and shutdown |
 | First run | `mpire-welcome` | Optional setup moved out of the installer |
 | Apps | `mpire-files`, `mpire-software`, ... | See below |
 | Look | `mpire-icons`, `mpire-cursors`, `mpire-wallpapers`, `mpire-sounds`, `mpire-fonts` | One visual language |
