@@ -34,7 +34,7 @@ Goal: boot and install straight into Mpire Desktop, with no Plasma.
 
 - [ ] `MpireOS.Style` QML module implementing the design system (shared with Mpire Setup)
 - [ ] Desktop widgets: Today, A moment of focus, Now playing
-- [ ] `mpire-session`: starts KWin and the shell
+- [ ] `mpire-session`: starts the compositor (KWin for now) and the shell
 - [ ] `mpire-shell`: top bar, dock, app launcher, notifications, quick settings, volume and brightness pop-ups
 - [ ] `mpire-greeter` and `mpire-lock`
 - [ ] `mpire-decoration` and window animations
@@ -42,6 +42,18 @@ Goal: boot and install straight into Mpire Desktop, with no Plasma.
 - [ ] `mpire-welcome`: first-run app
 - [ ] Icons, cursors, wallpapers, and sounds
 - [ ] Remove Plasma from the ISO
+
+## Compositor track: `mpire-compositor`
+
+Runs alongside v0.2 and v0.3 so it does not block the desktop.
+
+- [ ] Minimal wlroots compositor: outputs, input, xdg-shell windows, layer-shell for the shell
+- [ ] Window management: focus, move and resize, snapping, workspaces
+- [ ] Effects: rounded corners, shadows, background blur, open and close animations
+- [ ] Session lock, XWayland, screen sharing through portals, idle and power management
+- [ ] Multi-monitor, HiDPI, fractional scaling
+- [ ] Overview and task switching
+- [ ] Hardware test matrix passes, then it becomes the default and KWin is removed
 
 ## v0.3: Public launch
 
