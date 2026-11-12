@@ -5,6 +5,7 @@ import MpireOS.Style
 // "Now playing": the current track from any media player (MPRIS).
 Card {
     id: card
+    plain: true
     property string overline: qsTr("Slow down a little")
     property string title: "Soft Currents"
     property string source: "MpireOS soundscapes"

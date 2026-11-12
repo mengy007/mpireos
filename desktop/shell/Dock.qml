@@ -3,27 +3,13 @@ import QtQuick.Layouts
 import QtQuick.Effects
 import MpireOS.Style
 
-// The floating dock: launcher, pinned and running apps, settings.
+// The dock: launcher, pinned and running apps, settings. Icons float on the
+// desktop with no panel behind them.
 Item {
     id: dock
     property date now: new Date()
     implicitWidth: row.implicitWidth + 28
     implicitHeight: 72
-
-    RectangularShadow {
-        anchors.fill: bg
-        radius: bg.radius
-        color: Qt.rgba(0.235, 0.188, 0.431, 0.14)
-        blur: 40
-        offset.y: 14
-    }
-    Rectangle {
-        id: bg
-        anchors.fill: parent
-        radius: Theme.radiusDock
-        color: "#D9FBFAFD"
-        border.color: "#FFFFFFFF"
-    }
 
     component Divider: Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 36; color: Theme.border }
 

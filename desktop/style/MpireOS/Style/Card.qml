@@ -9,8 +9,10 @@ Item {
     property int level: 2
     property color color: Theme.surface
     property int radius: Theme.radius
+    property bool plain: false      // no surface or shadow: content sits on the desktop
 
     RectangularShadow {
+        visible: !root.plain
         anchors.fill: bg
         radius: bg.radius
         color: Qt.rgba(0.235, 0.188, 0.431, [0, 0.06, 0.08, 0.12, 0.18][root.level])
@@ -19,6 +21,7 @@ Item {
     }
     Rectangle {
         id: bg
+        visible: !root.plain
         anchors.fill: parent
         radius: root.radius
         color: root.color

@@ -5,6 +5,7 @@ import MpireOS.Style
 // "Today": big day number, month grid, and a one-line note.
 Card {
     id: card
+    plain: true
     property date now: new Date()
     property string noteTitle: qsTr("A fresh page")
     property string noteText: qsTr("Make something good today.")

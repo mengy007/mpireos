@@ -5,6 +5,7 @@ import MpireOS.Style
 // "A moment of focus": a simple focus timer.
 Card {
     id: card
+    plain: true
     property int minutes: 25
     property int remaining: minutes * 60
     property bool running: false
