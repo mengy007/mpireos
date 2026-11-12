@@ -88,9 +88,9 @@ SetupPage {
     PickerPopup {
         id: keyboardPopup
         title: qsTr("Keyboard layout")
-        options: ["English (US)", "English (UK)", "Spanish (Latin American)", "French (Canada)", "German"]
+        options: Installer.keyboards.map(k => k.name)
         current: Installer.detectedKeyboard
-        onPicked: value => Installer.detectedKeyboard = value
+        onPicked: value => Installer.keyboardOverride = Installer.keyboardCodeFor(value)
     }
     PickerPopup {
         id: timezonePopup

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Boots an MpireOS ISO in QEMU and waits for the live desktop to start.
 # Usage: scripts/smoke-test.sh path/to.iso [timeout-seconds]
-# Passes when the image prints MPIREOS_DESKTOP_OK on its serial console.
+# Passes when the image prints MPIREOS_DESKTOP_OK and MPIREOS_SETUP_OK (the
+# installer opened by itself) on its serial console.
 set -euo pipefail
 iso="$1"
 timeout="${2:-1200}"
@@ -20,12 +21,12 @@ qemu=$!
 trap 'kill $qemu 2>/dev/null || true' EXIT
 
 for ((t = 0; t < timeout; t += 5)); do
-    if grep -q MPIREOS_DESKTOP_OK "$log"; then
-        echo "PASS: desktop started after ~${t}s"
+    if grep -q MPIREOS_DESKTOP_OK "$log" && grep -q MPIREOS_SETUP_OK "$log"; then
+        echo "PASS: desktop and installer started after ~${t}s"
         exit 0
     fi
-    if grep -q MPIREOS_DESKTOP_FAIL "$log"; then
-        echo "FAIL: the desktop did not start"
+    if grep -q -e MPIREOS_DESKTOP_FAIL -e MPIREOS_SETUP_FAIL "$log"; then
+        echo "FAIL: the desktop or the installer did not start"
         grep -a MPIREOS_ "$log" || true
         exit 1
     fi

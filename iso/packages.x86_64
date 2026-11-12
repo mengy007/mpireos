@@ -65,6 +65,8 @@ os-prober
 # MpireOS
 mpire-base
 mpire-keyring
+mpire-setup
+inter-font
 
 # Base tools
 sudo

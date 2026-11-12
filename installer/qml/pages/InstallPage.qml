@@ -5,11 +5,14 @@ import MpireSetup
 
 SetupPage {
     id: page
-    overline: qsTr("Installing")
-    title: qsTr("Making your space")
-    subtitle: Installer.status
+    overline: Installer.failed ? qsTr("Install stopped") : qsTr("Installing")
+    title: Installer.failed ? qsTr("Something went wrong") : qsTr("Making your space")
+    subtitle: Installer.failed
+              ? qsTr("MpireOS couldn't finish installing. Your settings are kept, so you can go back and try again.")
+              : Installer.status
     showBack: false
-    showFooter: false
+    showFooter: Installer.failed
+    continueText: qsTr("Back to review")
 
     readonly property var tour: [
         { title: qsTr("Undo any update"), text: qsTr("MpireOS takes a snapshot before every update. If something goes wrong, pick an earlier snapshot when your computer starts.") },
@@ -18,8 +21,38 @@ SetupPage {
     ]
     property int tourIndex: 0
 
+    // Shown only when the install fails.
+    Rectangle {
+        Layout.fillWidth: true
+        visible: Installer.failed
+        implicitHeight: errorColumn.implicitHeight + 40
+        radius: Theme.radius
+        color: Theme.surfaceSunken
+        ColumnLayout {
+            id: errorColumn
+            anchors.fill: parent
+            anchors.margins: 20
+            spacing: 8
+            Text {
+                Layout.fillWidth: true
+                text: Installer.errorMessage
+                color: Theme.danger
+                font.pixelSize: Theme.fontBody
+                wrapMode: Text.WordWrap
+            }
+            Text {
+                Layout.fillWidth: true
+                text: qsTr("The full log is in %1.").arg(Installer.logPath)
+                color: Theme.textMuted
+                font.pixelSize: Theme.fontSmall
+                wrapMode: Text.WordWrap
+            }
+        }
+    }
+
     ProgressBar {
         id: bar
+        visible: !Installer.failed
         Layout.fillWidth: true
         value: Installer.progress
         background: Rectangle { implicitHeight: 6; radius: 3; color: Theme.surfaceSunken }
@@ -38,6 +71,7 @@ SetupPage {
         }
     }
     Text {
+        visible: !Installer.failed
         text: qsTr("%1% complete").arg(Math.round(Installer.progress * 100))
         color: Theme.textMuted
         font.pixelSize: Theme.fontSmall
@@ -47,6 +81,7 @@ SetupPage {
 
     Rectangle {
         Layout.fillWidth: true
+        visible: !Installer.failed
         implicitHeight: 160
         radius: Theme.radius
         color: Theme.surfaceSunken

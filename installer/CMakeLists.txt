@@ -16,7 +16,7 @@ else()
     set(qml_dir "${MPIRE_SETUP_QML_INSTALL_DIR}")
 endif()
 
-add_executable(mpire-setup src/main.cpp)
+add_executable(mpire-setup src/main.cpp src/systembridge.cpp src/systembridge.h)
 target_compile_definitions(mpire-setup PRIVATE MPIRE_SETUP_QML_DIR="${qml_dir}")
 target_link_libraries(mpire-setup PRIVATE Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2)
 

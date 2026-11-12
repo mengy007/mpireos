@@ -4,7 +4,11 @@ The MpireOS installer: fully graphical, friendly, and asking only what it must. 
 
 ## Status
 
-This is the **user interface only**. It runs against `MockInstaller.qml`, which pretends to detect a disk and simulates an install. Nothing touches a disk yet. The privileged backend comes next.
+On the live ISO, Mpire Setup **opens full screen by itself** when the live session starts, and an "Install MpireOS" launcher reopens it after "Try it first". It lists the real disks (never the USB stick it booted from) and runs the backend, [`backend/mpire-install`](backend/README.md), as root through `sudo` with the plan the user built. Progress and errors come back as JSON lines.
+
+Anywhere else (your own machine, `--demo`, or `tools/preview.py`) it shows sample disks and a simulated install, and never touches a disk.
+
+Not yet: installing alongside another OS (the backend only erases a whole disk, so that option stays hidden), and detecting the time zone from the network (it uses the live system's, which is UTC; the user can change it on Review).
 
 ## The flow
 
@@ -21,8 +25,11 @@ This is the **user interface only**. It runs against `MockInstaller.qml`, which 
 |---|---|
 | `qml/Main.qml` | Window, navigation, and footer buttons |
 | `qml/pages/` | One file per screen |
-| `qml/MpireSetup/` | Theme tokens, shared components, and the mock backend |
+| `qml/MpireSetup/` | Theme tokens, shared components, and `Installer.qml` (the plan, progress, and demo mode) |
 | `src/main.cpp` | The native app (Qt 6) |
+| `src/systembridge.*` | Disk detection and running `mpire-install` |
+| `../packages/mpire-setup/` | The pacman package, built by CI into `[mpire]` |
+| `../iso/airootfs/etc/xdg/autostart/mpire-setup.desktop` | Opens it when the live session starts |
 | `tools/preview.py` | Run the UI with PySide6, or save screenshots of every screen |
 
 ## Running
@@ -38,7 +45,7 @@ Native build (Qt 6.9+):
 
 ```sh
 cmake -S installer -B build/installer && cmake --build build/installer
-./build/installer/mpire-setup --windowed
+./build/installer/mpire-setup --windowed --demo
 ```
 
 ## Screenshots

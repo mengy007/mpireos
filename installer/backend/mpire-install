@@ -23,7 +23,7 @@ Plan format (JSON):
       "mode": "erase",                 # "erase" (only mode supported so far)
       "encrypt": false,
       "language": "en_US",             # locale without encoding
-      "keyboard": "us",                # console keymap / XKB layout
+      "keyboard": "us",                # XKB layout (console keymap is derived)
       "timezone": "America/Los_Angeles",
       "hostname": "jordan-computer",
       "user": {"fullName": "Jordan Lee", "name": "jordan", "password": "..."},
@@ -65,6 +65,9 @@ LIVE_ONLY_PATHS = [
     "etc/systemd/system/mpire-live-user.service",
     "etc/systemd/system/multi-user.target.wants/mpire-live-user.service",
     "usr/local/bin/mpire-live-setup",
+    "usr/local/bin/mpire-setup-live",
+    "etc/xdg/autostart/mpire-setup.desktop",
+    "usr/local/share/applications/mpire-setup.desktop",
     "etc/mkinitcpio.conf.d/archiso.conf",
     "etc/mkinitcpio.d/linux.preset",
     "etc/systemd/system/getty@tty1.service.d",
@@ -106,7 +109,10 @@ CI_ONLY_PATHS = [
     "etc/systemd/system/graphical.target.wants/mpire-boot-check.service",
     "usr/local/bin/mpire-boot-check",
 ]
-LIVE_ONLY_PACKAGES = ["mkinitcpio-archiso", "archinstall", "clonezilla", "cloud-init"]
+LIVE_ONLY_PACKAGES = ["mkinitcpio-archiso", "archinstall", "clonezilla", "cloud-init", "mpire-setup"]
+
+# XKB layouts whose console keymap has a different name.
+CONSOLE_KEYMAPS = {"gb": "uk", "latam": "la-latin1", "ca": "cf"}
 
 
 class InstallError(Exception):
@@ -310,8 +316,10 @@ class Installer:
         self.write("etc/locale.gen", "".join(f"{l}\n" for l in sorted(locales)))
         self.chroot("locale-gen")
         self.write("etc/locale.conf", f"LANG={lang}.UTF-8\n")
-        keyboard = self.plan.get("keyboard", "us")
-        self.write("etc/vconsole.conf", f"KEYMAP={keyboard}\n")
+        keyboard = self.plan.get("keyboard", "us")        # an XKB layout
+        if not re.fullmatch(r"[a-z]{2,8}", keyboard):
+            raise InstallError(f"Unsupported keyboard layout: {keyboard}")
+        self.write("etc/vconsole.conf", f"KEYMAP={CONSOLE_KEYMAPS.get(keyboard, keyboard)}\n")
         self.write("etc/X11/xorg.conf.d/00-keyboard.conf",
                    'Section "InputClass"\n    Identifier "system-keyboard"\n'
                    '    MatchIsKeyboard "on"\n'
