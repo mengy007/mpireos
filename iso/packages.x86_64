@@ -51,5 +51,16 @@ snap-pac
 grub-btrfs
 inotify-tools
 
+# Installer backend
+python
+rsync
+gptfdisk
+dosfstools
+cryptsetup
+grub
+efibootmgr
+arch-install-scripts
+os-prober
+
 # Base tools
 sudo
