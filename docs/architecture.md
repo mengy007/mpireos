@@ -62,7 +62,7 @@ How promotion works:
 
 ### MpireOS's own repository
 
-An additional pacman repository, `[mpire]`, holds MpireOS's own packages: branding, default configuration, `mpire-update`, the Calamares configuration, and later the desktop components. It is listed before Arch's repos so its packages take priority where names overlap.
+An additional pacman repository, `[mpire]`, holds MpireOS's own packages: branding, default configuration, `mpire-update`, the installer, and later the desktop components. It is listed before Arch's repos so its packages take priority where names overlap.
 
 - PKGBUILDs live in `packages/` in this repository.
 - CI builds them in a clean Arch container and publishes a signed repository.
@@ -133,7 +133,47 @@ Planned order: dock, app launcher, control center, welcome app, software center,
 
 ## Installer
 
-**Calamares** with MpireOS branding and configuration (`mpire-calamares-config`). It creates the Btrfs layout above, sets up snapper, enables the chosen channel, and offers an optional disk encryption choice (LUKS2).
+MpireOS has its own installer, **Mpire Setup**. The goal is an install that feels premium and takes a couple of minutes of attention: fully graphical, friendly, and asking only what MpireOS cannot work out for itself. Everything optional moves to the first-boot welcome app.
+
+### Principles
+
+- **Only ask what is required.** If a value can be detected or sensibly defaulted, do that and show it on the review screen instead of asking.
+- **One decision per screen**, in plain language, with no partitioning or bootloader jargon on the default path.
+- **Never lose data by surprise.** Anything destructive is spelled out on the review screen before the Install button is enabled.
+- **Works offline.** The install copies the live system from the ISO, so no network is needed.
+- **Advanced options exist but stay out of the way**, behind a single "Advanced" link.
+
+### The flow
+
+| # | Screen | What the user does | What is decided for them |
+|---|---|---|---|
+| 1 | **Welcome** | Picks "Install MpireOS" or "Try it first". Language is preselected and can be changed. | Language from firmware and live-session locale |
+| 2 | **Where to install** | Picks one card: "Erase this disk and install" or, if another OS is found, "Install alongside Windows/Linux". An "Encrypt my disk" switch is on this screen. | Disk choice if there is only one; Btrfs layout; partition sizes; bootloader |
+| 3 | **About you** | Enters name and password. | Username from the name (editable); computer name such as `meng-laptop`; keyboard from language; timezone from location |
+| 4 | **Review** | Confirms a short plain-English summary, then presses Install. | — |
+| 5 | **Installing** | Watches a progress bar with a short tour of MpireOS. | — |
+| 6 | **Done** | Presses Restart. | — |
+
+That is three questions for most people: language (usually just confirmed), where to install, and who they are.
+
+**Not asked during install** (handled automatically or moved to the welcome app): keyboard layout, timezone, computer name, partitioning, swap, filesystem, bootloader, graphics drivers, light or dark theme, extra apps, Wi-Fi, update channel, privacy settings. Detected values appear on the review screen with an "Edit" link.
+
+If an encryption passphrase is needed, MpireOS reuses the account password by default, with an option to set a separate one.
+
+### Look and feel
+
+- Full-screen, borderless, using the same design system as MpireOS's desktop components (typography, color, motion).
+- Smooth transitions between screens, a visible step indicator, and a large primary button in the same place on every screen.
+- Light and dark modes that follow the live session.
+- Accessible: full keyboard navigation, screen reader labels, scalable text.
+
+### How it is built
+
+- **Frontend:** Qt 6 / QML, in `installer/`. It never touches disks itself.
+- **Backend:** a small privileged service that the frontend drives over D-Bus with a single install plan (disk, encryption, user, locale). It partitions, creates the Btrfs subvolumes, copies the live system, installs the bootloader, configures snapper, creates the user, and removes live-only packages. Every step reports progress and logs to a file the user can save if something fails.
+- **Tested in CI:** the backend runs unattended from a plan file, so the QEMU smoke test performs a real install on every ISO build.
+
+Building our own installer is more work than reusing Calamares, but the installer is the first thing anyone sees, and Calamares cannot easily be cut down to this flow or made to look native. Calamares stays available as a fallback in development builds until Mpire Setup covers dual boot and encryption.
 
 ## Building the ISO
 

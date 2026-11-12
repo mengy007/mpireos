@@ -16,7 +16,7 @@ For anything bigger than a typo, open an issue first describing what you plan to
 
 ## Making a change
 
-1. Fork the repository and create a branch from `main` with a short, descriptive name, such as `iso/add-calamares` or `docs/fix-install-steps`.
+1. Fork the repository and create a branch from `main` with a short, descriptive name, such as `installer/disk-screen` or `docs/fix-install-steps`.
 2. Keep each pull request focused on one change.
 3. Write commit messages in the imperative mood, with a short summary line ("Add snapper config for root subvolume").
 4. Explain in the pull request what changed, why, and how you tested it.
@@ -31,6 +31,7 @@ The layout will grow as the project does. The planned top-level directories are:
 | `docs/` | Architecture and design documents |
 | `iso/` | The archiso profile used to build the MpireOS image |
 | `packages/` | PKGBUILDs for MpireOS's own packages |
+| `installer/` | Mpire Setup, the graphical installer |
 | `desktop/` | MpireOS desktop components (Qt 6 / QML) |
 | `.github/workflows/` | CI that builds packages and ISOs |
 

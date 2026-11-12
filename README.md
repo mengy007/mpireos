@@ -19,7 +19,7 @@ MpireOS is a US-based, open source Linux distribution focused on a polished, coh
 | Package channels | `testing` and `stable`, both promoted from dated Arch snapshots |
 | Filesystem | Btrfs with snapper and boot-menu rollback |
 | Desktop | KDE Plasma 6 on Wayland, themed and preconfigured, with MpireOS components replacing parts over time |
-| Installer | Calamares |
+| Installer | Mpire Setup, MpireOS's own guided graphical installer |
 | Image build | archiso, built in GitHub Actions |
 
 The full design lives in [docs/architecture.md](docs/architecture.md).

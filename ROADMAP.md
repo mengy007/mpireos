@@ -21,7 +21,8 @@ Goal: a live ISO that boots in a VM and on common hardware, and installs to disk
 - [ ] `testing` and `stable` channels pinned to dated Arch snapshots
 - [ ] Btrfs subvolume layout, snapper, snap-pac, and grub-btrfs for rollback
 - [ ] KDE Plasma 6 (Wayland) with the MpireOS theme, layout, and defaults
-- [ ] Calamares installer with MpireOS branding and the Btrfs layout
+- [ ] Mpire Setup: the MpireOS graphical installer (welcome, where to install, about you, review), with erase-disk, encryption, and dual boot
+- [ ] Unattended install mode used by CI to test every ISO
 - [ ] `mpire-update`: a safe update command that snapshots, updates, and shows release news
 - [ ] Automated boot test of the ISO in QEMU
 - [ ] Released on GitHub with SHA-256 checksums and a signature
@@ -43,7 +44,7 @@ Goal: replace Plasma parts with MpireOS's own Qt 6 / QML components, one at a ti
 1. Dock
 2. App launcher
 3. Control center (settings)
-4. Welcome and first-run app
+4. Welcome app: optional setup moved out of the installer (theme, apps, Wi-Fi, privacy)
 5. Software center (pacman, Flatpak, and AUR with clear trust labels)
 6. File manager and other core apps
 
