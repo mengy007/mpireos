@@ -8,7 +8,7 @@ Status: draft, v0.0. This document describes how MpireOS is built and why. Open 
 2. **Arch ecosystem, calm updates.** Access to Arch's packages, the AUR, and the Arch Wiki, without the breakage risk of tracking Arch directly.
 3. **Every change is reversible.** A bad update costs one reboot, not an evening.
 4. **US-based and auditable.** Public builds, signed releases, no telemetry by default.
-5. **Progressive ownership.** Ship early on proven components, then replace them with MpireOS's own one at a time.
+5. **Our own desktop, end to end.** MpireOS builds every layer of the desktop, from the compositor up. Proven libraries are reused underneath (wlroots, Qt, system services).
 
 ## Non-goals for v0.1
 
@@ -21,10 +21,10 @@ Status: draft, v0.0. This document describes how MpireOS is built and why. Open 
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ MpireOS desktop components (Qt 6 / QML, from v0.3)       │
-│ dock · launcher · control center · welcome · software    │
+│ Mpire Desktop (Qt 6 / QML): greeter · lock · shell ·     │
+│ settings · welcome · files · software                    │
 ├─────────────────────────────────────────────────────────┤
-│ KDE Plasma 6 on Wayland, with MpireOS theme and defaults │
+│ mpire-compositor (C++ on wlroots): windows, input, blur  │
 ├─────────────────────────────────────────────────────────┤
 │ mpire packages: branding, configs, mpire-update, ...     │
 ├─────────────────────────────────────────────────────────┤
@@ -115,23 +115,48 @@ Running `pacman -Syu` directly still works and is still covered by snap-pac.
 
 Both `linux` (from the channel's snapshot) and `linux-lts` are installed by default, so there is always a fallback kernel in the boot menu.
 
-## Desktop
+## Desktop: Mpire Desktop
 
-### v0.1: themed Plasma
+MpireOS ships its own desktop environment, **Mpire Desktop**. Everything a user sees and touches is MpireOS's own: the login screen, lock screen, panel, dock, launcher, notifications, quick settings, settings app, and over time the core apps. It is written in **C++ and Qt 6 / QML** and shares one design system (color, type, spacing, motion, icons) with Mpire Setup, so the whole system looks like one product. The design system is defined in [design-system.md](design-system.md): light and airy, lavender backdrop, white rounded cards with soft shadows, one violet accent, pastel colors to tell things apart, a frosted top bar, a floating dock, and desktop widgets.
 
-MpireOS starts on **KDE Plasma 6 on Wayland**, with SDDM as the login manager. Plasma is Qt-based like Deepin's DDE, mature, and highly configurable, which makes it the best base to replace piece by piece.
+### What we build and what we reuse
 
-MpireOS ships its look as packages:
+MpireOS builds the whole desktop, **including its own Wayland compositor**, `mpire-compositor`: the layer that draws every window, handles input, and talks to the graphics drivers. Owning it means the frosted bar, the floating dock, window animations, blur, and the overview all behave exactly as designed, with no compromise from someone else's compositor.
 
-- `mpire-plasma-theme`: global theme (Plasma style, color scheme, window decoration, cursor, splash, SDDM theme)
-- `mpire-icons` and `mpire-wallpapers`
-- `mpire-desktop-defaults`: panel and dock layout, default apps, keyboard shortcuts, font choices
+**How it is built:**
 
-### v0.3 onward: MpireOS components
+- **C++ on [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots)** (MIT license, hosted by freedesktop.org), the same foundation as Sway and Hyprland. wlroots handles the hard, hardware-specific parts (DRM/KMS, libinput, multi-GPU, XWayland) so our code focuses on window management, effects, and the scene.
+- **Small and crash-safe.** The compositor only manages windows, input, and effects. The shell, settings, greeter, and lock screen are separate Qt clients that talk to it over standard protocols (`wlr-layer-shell`, `ext-session-lock`, `xdg-activation`, `ext-foreign-toplevel-list`, `ext-background-effect` for blur). A shell crash never takes your windows down.
+- **Standard protocols only for apps**, so every Wayland, Qt, GTK, Flatpak, and X11 (through XWayland) app works normally.
+- **Effects in the compositor:** background blur, rounded corners and shadows on every window, open and close animations, workspaces, and an overview.
 
-Components are written in **C++ and Qt 6 / QML**, shipped as separate packages, and each one replaces a single Plasma part. They live in `desktop/` and share one design system (colors, spacing, typography, motion) so they look like one product.
+**Interim:** because the shell talks to the compositor only through standard protocols, Mpire Desktop also runs on KWin. Development builds use KWin until `mpire-compositor` passes a hardware test matrix (Intel, AMD, and NVIDIA GPUs; laptops with hybrid graphics; HiDPI, fractional scaling, and multiple monitors). It then becomes the default, and KWin is dropped.
 
-Planned order: dock, app launcher, control center, welcome app, software center, file manager. Each must be at least as usable as the Plasma part it replaces before it becomes the default.
+| Layer | Mpire Desktop component | Notes |
+|---|---|---|
+| Login and lock | `mpire-greeter`, `mpire-lock` | SDDM greeter theme in QML; lock screen of our own |
+| Shell | `mpire-shell` | One process: top bar, dock, app launcher, notifications, quick settings, on-screen displays, task switcher. Uses the Wayland layer-shell protocol. |
+| Settings | `mpire-settings` | Our own control center. Talks to standard system services (NetworkManager, PipeWire, UPower, BlueZ, systemd, AccountsService, fwupd). |
+| Compositor | `mpire-compositor` | Window management, input, blur, shadows, animations, workspaces, overview |
+| Window look | `mpire-decoration` | Window title bars and controls, drawn by the compositor |
+| Session | `mpire-session` | Starts the compositor and the shell, autostart, logout and shutdown |
+| First run | `mpire-welcome` | Optional setup moved out of the installer |
+| Apps | `mpire-files`, `mpire-software`, ... | See below |
+| Look | `mpire-icons`, `mpire-cursors`, `mpire-wallpapers`, `mpire-sounds`, `mpire-fonts` | One visual language |
+
+All components live in `desktop/` and are packaged separately so each can be updated on its own.
+
+### Apps
+
+MpireOS writes its own apps where the app defines the experience: **Files**, **Software** (pacman, Flatpak, and AUR with clear trust labels), **Settings**, and **Welcome**. Until each exists, MpireOS ships an existing Qt app styled to match (Dolphin, Konsole, Kate, Gwenview, Okular, Ark, Spectacle). Third-party apps (Firefox, LibreOffice) are kept and themed through Qt and GTK themes so they fit in.
+
+### Platform services
+
+Mpire Desktop builds on standard Linux services and freedesktop.org protocols instead of inventing its own, so Flatpak apps, GTK apps, and portals work normally: `xdg-desktop-portal` (with KDE's backend at first, ours later), PipeWire, NetworkManager, BlueZ, UPower, PolicyKit (with our own authentication dialog), and the StatusNotifier and notification specs.
+
+### Scaffolding during development
+
+Until `mpire-shell` and `mpire-settings` reach a usable state, development ISOs boot into KDE Plasma so the build, installer, and update pipelines can be tested end to end. Plasma is scaffolding only: **no public release ships with it.** It is removed from the ISO as soon as Mpire Desktop can run a full session.
 
 ## Installer
 

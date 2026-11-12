@@ -8,7 +8,7 @@ Thanks for your interest. MpireOS is at a very early stage, so ideas and feedbac
 - **Discuss the design.** Open an issue on anything in [docs/architecture.md](docs/architecture.md) you think is wrong or missing.
 - **Design.** Icons, wallpapers, the theme, and the layout of MpireOS's own components all need designers.
 - **Packaging and build.** PKGBUILDs, the archiso profile, and CI.
-- **Desktop components.** Qt 6 / QML work on the dock, launcher, and control center (see the [roadmap](ROADMAP.md)).
+- **Mpire Desktop.** Qt 6 / QML work on the shell, settings, and apps (see the [roadmap](ROADMAP.md)).
 
 ## Before you start
 
@@ -32,7 +32,7 @@ The layout will grow as the project does. The planned top-level directories are:
 | `iso/` | The archiso profile used to build the MpireOS image |
 | `packages/` | PKGBUILDs for MpireOS's own packages |
 | `installer/` | Mpire Setup, the graphical installer |
-| `desktop/` | MpireOS desktop components (Qt 6 / QML) |
+| `desktop/` | Mpire Desktop: shell, settings, greeter, and apps (Qt 6 / QML) |
 | `.github/workflows/` | CI that builds packages and ISOs |
 
 ## Licensing of contributions
