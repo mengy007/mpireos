@@ -53,7 +53,9 @@ wait_for() {  # log ok-marker fail-marker pid
 
 echo "==> Phase 1: unattended install"
 : > "$install_log"
-qemu-system-x86_64 "${common[@]}" -cdrom "$iso" \
+# The ISO is attached as a second virtio disk (it is a hybrid image), so the target
+# stays /dev/vda; under OVMF the emulated CD drive was not found by the initramfs.
+qemu-system-x86_64 "${common[@]}" -drive "file=$iso,if=virtio,format=raw,readonly=on" \
     -kernel "$work/vmlinuz" -initrd "$work/initramfs.img" \
     -append "archisobasedir=arch archisolabel=$label mpire.autoinstall console=tty0 console=ttyS0,115200" \
     -serial "file:$install_log" &
