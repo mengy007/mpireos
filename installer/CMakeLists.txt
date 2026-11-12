@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Gui Qml Quick QuickControls2)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Gui Qml Quick QuickControls2)
 
 include(GNUInstallDirs)
 set(MPIRE_SETUP_QML_INSTALL_DIR "${CMAKE_INSTALL_FULL_DATADIR}/mpire-setup/qml")

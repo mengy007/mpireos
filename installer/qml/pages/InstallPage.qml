@@ -5,7 +5,8 @@ import MpireSetup
 
 SetupPage {
     id: page
-    title: qsTr("Installing MpireOS")
+    overline: qsTr("Installing")
+    title: qsTr("Making your space")
     subtitle: Installer.status
     showBack: false
     showFooter: false
@@ -21,16 +22,16 @@ SetupPage {
         id: bar
         Layout.fillWidth: true
         value: Installer.progress
-        background: Rectangle { implicitHeight: 8; radius: 4; color: Theme.surface }
+        background: Rectangle { implicitHeight: 6; radius: 3; color: Theme.surfaceSunken }
         contentItem: Item {
             Rectangle {
                 width: bar.visualPosition * parent.width
                 height: parent.height
-                radius: 4
+                radius: 3
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop { position: 0; color: Theme.accent }
-                    GradientStop { position: 1; color: "#8C6BFF" }
+                    GradientStop { position: 1; color: Theme.lavender }
                 }
                 Behavior on width { NumberAnimation { duration: 200 } }
             }
@@ -48,8 +49,8 @@ SetupPage {
         Layout.fillWidth: true
         implicitHeight: 160
         radius: Theme.radius
-        color: Theme.surface
-        border.color: Theme.border
+        color: Theme.surfaceSunken
+        border.width: 0
         ColumnLayout {
             id: tourCard
             anchors.fill: parent
@@ -58,7 +59,7 @@ SetupPage {
             Text {
                 text: page.tour[page.tourIndex].title
                 color: Theme.text
-                font.pixelSize: 22
+                font.pixelSize: 18
                 font.weight: Font.DemiBold
             }
             Text {

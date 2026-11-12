@@ -16,7 +16,7 @@ Popup {
     modal: true
     padding: 24
     background: Rectangle { radius: Theme.radius; color: Theme.surface; border.color: Theme.border }
-    Overlay.modal: Rectangle { color: "#AA000000" }
+    Overlay.modal: Rectangle { color: "#663C306E" }
 
     contentItem: ColumnLayout {
         spacing: 8
@@ -36,7 +36,7 @@ Popup {
                 text: modelData.replace("_", " ")
                 contentItem: Text {
                     text: parent.text
-                    color: modelData === popup.current ? Theme.accentHover : Theme.text
+                    color: modelData === popup.current ? Theme.accentText : Theme.text
                     font.pixelSize: Theme.fontBody
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: 12

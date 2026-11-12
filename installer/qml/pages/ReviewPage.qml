@@ -5,7 +5,8 @@ import MpireSetup
 
 SetupPage {
     id: page
-    title: qsTr("Ready to install")
+    overline: qsTr("Step 4 of 4")
+    title: qsTr("Ready when you are")
     subtitle: qsTr("Check the details below. Nothing changes until you press Install.")
     continueText: qsTr("Install now")
 
@@ -21,8 +22,8 @@ SetupPage {
         Layout.fillWidth: true
         implicitHeight: rows.implicitHeight + 40
         radius: Theme.radius
-        color: Theme.surface
-        border.color: Theme.border
+        color: Theme.surfaceSunken
+        border.width: 0
 
         ColumnLayout {
             id: rows

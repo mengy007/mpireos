@@ -5,6 +5,7 @@ import MpireSetup
 
 SetupPage {
     id: page
+    overline: qsTr("Step 2 of 4")
     title: qsTr("Where should MpireOS go?")
     subtitle: Installer.disks.length > 1
               ? qsTr("Choose a disk, then how to use it.")
@@ -33,7 +34,8 @@ SetupPage {
     ChoiceCard {
         Layout.fillWidth: true
         glyph: "✦"
-        badgeColor: Theme.accent
+        badgeColor: Theme.lavenderTint
+        glyphColor: Theme.accent
         title: qsTr("Erase disk and install MpireOS")
         description: Installer.disk.otherOs
                      ? qsTr("<font color='%1'>This removes %2 and all files on this disk.</font>").arg(Theme.danger).arg(Installer.disk.otherOs)
@@ -45,6 +47,8 @@ SetupPage {
         Layout.fillWidth: true
         visible: !!Installer.disk.otherOs
         glyph: "⇆"
+        badgeColor: Theme.sageTint
+        glyphColor: Theme.sage
         title: qsTr("Install alongside %1").arg(Installer.disk.otherOs || "")
         description: qsTr("Keep %1 and choose which one to start each time you turn on your computer. Space is split evenly; you can change this under Advanced.").arg(Installer.disk.otherOs || "")
         selected: Installer.diskMode === "alongside"
@@ -56,8 +60,8 @@ SetupPage {
         Layout.topMargin: 8
         implicitHeight: encryptRow.implicitHeight + 32
         radius: Theme.radius
-        color: Theme.surface
-        border.color: Theme.border
+        color: Theme.surfaceSunken
+        border.width: 0
         RowLayout {
             id: encryptRow
             anchors.fill: parent
@@ -69,14 +73,14 @@ SetupPage {
                 Text {
                     text: qsTr("Encrypt my disk")
                     color: Theme.text
-                    font.pixelSize: Theme.fontSubtitle
+                    font.pixelSize: 15
                     font.weight: Font.DemiBold
                 }
                 Text {
                     Layout.fillWidth: true
                     text: qsTr("Keeps your files private if this computer is lost or stolen. You'll unlock it with your password when it starts.")
-                    color: Theme.textMuted
-                    font.pixelSize: Theme.fontBody
+                    color: Theme.textSecondary
+                    font.pixelSize: 13
                     wrapMode: Text.WordWrap
                 }
             }
@@ -85,11 +89,11 @@ SetupPage {
                 checked: Installer.encrypt
                 onToggled: Installer.encrypt = checked
                 indicator: Rectangle {
-                    implicitWidth: 52; implicitHeight: 30; radius: 15
-                    color: encryptSwitch.checked ? Theme.accent : Theme.border
+                    implicitWidth: 44; implicitHeight: 26; radius: 13
+                    color: encryptSwitch.checked ? Theme.accent : "#D5D2DE"
                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
                     Rectangle {
-                        width: 24; height: 24; radius: 12; y: 3
+                        width: 20; height: 20; radius: 10; y: 3
                         x: encryptSwitch.checked ? parent.width - width - 3 : 3
                         color: "white"
                         Behavior on x { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
@@ -101,9 +105,9 @@ SetupPage {
 
     Text {
         text: qsTr("Advanced options")
-        color: Theme.textMuted
+        color: Theme.accentText
         font.pixelSize: Theme.fontSmall
-        font.underline: true
+        font.underline: false
         ToolTip.visible: advArea.containsMouse
         ToolTip.text: qsTr("Manual partitioning is coming in a later release.")
         MouseArea { id: advArea; anchors.fill: parent; hoverEnabled: true }

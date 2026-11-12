@@ -11,7 +11,8 @@ ApplicationWindow {
     height: 800
     visible: true
     title: qsTr("Install MpireOS")
-    color: Theme.background
+    color: Theme.backdrop
+    font.family: Theme.fontFamily
 
     // Screens in order. Only the first four count as "steps" for the user.
     readonly property var screens: [welcome, disk, user, review, install, done]
@@ -28,28 +29,69 @@ ApplicationWindow {
                       forward ? StackView.PushTransition : StackView.PopTransition)
     }
 
-    // Soft glow behind the content.
+    // Backdrop: pale lavender with soft light sweeps (design-system.md, Color).
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.backgroundGlow }
-            GradientStop { position: 0.55; color: Theme.background }
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: Theme.backdropHighlight }
+            GradientStop { position: 1.0; color: Theme.backdrop }
+        }
+    }
+    Repeater {
+        model: [
+            { x: 0.55, y: -0.35, s: 1.25, o: 0.55 },
+            { x: 0.70, y: 0.10, s: 1.10, o: 0.35 },
+            { x: -0.30, y: 0.55, s: 1.00, o: 0.40 }
+        ]
+        delegate: Rectangle {
+            required property var modelData
+            width: window.width * modelData.s
+            height: width
+            radius: width / 2
+            x: window.width * modelData.x
+            y: window.height * modelData.y
+            color: "transparent"
+            border.width: width * 0.08
+            border.color: "white"
+            opacity: modelData.o * 0.5
         }
     }
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 48
-        spacing: 0
-
+    // Top bar: frosted, like the desktop's.
+    Rectangle {
+        id: topBar
+        anchors { left: parent.left; right: parent.right; top: parent.top }
+        height: 44
+        color: Theme.chrome
+        Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Theme.divider }
         RowLayout {
-            Layout.fillWidth: true
+            anchors.fill: parent
+            anchors.leftMargin: 24
+            anchors.rightMargin: 24
+            spacing: 10
+            Rectangle {
+                Layout.preferredWidth: 18; Layout.preferredHeight: 18
+                radius: 6
+                gradient: Gradient {
+                    GradientStop { position: 0; color: Theme.accentHover }
+                    GradientStop { position: 1; color: Theme.accentPressed }
+                }
+            }
             Text {
                 text: "MpireOS"
                 color: Theme.text
-                font.pixelSize: 20
-                font.weight: Font.Bold
-                font.letterSpacing: 0.5
+                font.family: Theme.fontFamily
+                font.pixelSize: 16
+                font.weight: Font.DemiBold
+                font.letterSpacing: -0.3
+            }
+            Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: Theme.border }
+            Text {
+                text: qsTr("Setup")
+                color: Theme.textSecondary
+                font.family: Theme.fontFamily
+                font.pixelSize: 13
             }
             Item { Layout.fillWidth: true }
             StepIndicator {
@@ -58,60 +100,105 @@ ApplicationWindow {
                 current: window.index
             }
         }
+    }
 
-        StackView {
-            id: stack
-            Layout.alignment: Qt.AlignHCenter
-            Layout.preferredWidth: Math.min(720, window.width - 96)
-            Layout.fillHeight: true
-            Layout.topMargin: 56
-            initialItem: welcome
-            clip: true
+    // The setup window: a white card floating on the backdrop.
+    Item {
+        id: card
+        width: Math.min(820, window.width - 96)
+        height: Math.min(620, window.height - 160)
+        anchors.centerIn: parent
+        anchors.verticalCenterOffset: 10
 
-            pushEnter: Transition {
-                ParallelAnimation {
-                    NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.animNormal }
-                    NumberAnimation { property: "x"; from: 40; to: 0; duration: Theme.animNormal; easing.type: Easing.OutCubic }
-                }
-            }
-            pushExit: Transition {
-                NumberAnimation { property: "opacity"; from: 1; to: 0; duration: Theme.animFast }
-            }
-            popEnter: Transition {
-                ParallelAnimation {
-                    NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.animNormal }
-                    NumberAnimation { property: "x"; from: -40; to: 0; duration: Theme.animNormal; easing.type: Easing.OutCubic }
-                }
-            }
-            popExit: Transition {
-                NumberAnimation { property: "opacity"; from: 1; to: 0; duration: Theme.animFast }
-            }
-            replaceEnter: pushEnter
-            replaceExit: pushExit
+        SoftShadow { target: cardBg; level: 3 }
+        Rectangle {
+            id: cardBg
+            anchors.fill: parent
+            radius: Theme.radiusWindow
+            color: Theme.surface
+            border.color: Theme.border
         }
 
-        // Footer: Back on the left, the primary action always in the same place.
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            Layout.preferredWidth: Math.min(720, window.width - 96)
-            Layout.maximumWidth: Layout.preferredWidth
-            Layout.fillWidth: false
-            visible: window.page && window.page.showFooter
-            GhostButton {
-                text: qsTr("Back")
-                visible: window.page && window.page.showBack
-                onClicked: window.go(window.index - 1)
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 0
+
+            StackView {
+                id: stack
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.margins: 44
+                Layout.bottomMargin: 20
+                initialItem: welcome
+                clip: true
+
+                pushEnter: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.animNormal }
+                        NumberAnimation { property: "x"; from: 24; to: 0; duration: Theme.animNormal; easing.type: Easing.OutCubic }
+                    }
+                }
+                pushExit: Transition {
+                    NumberAnimation { property: "opacity"; from: 1; to: 0; duration: Theme.animFast }
+                }
+                popEnter: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.animNormal }
+                        NumberAnimation { property: "x"; from: -24; to: 0; duration: Theme.animNormal; easing.type: Easing.OutCubic }
+                    }
+                }
+                popExit: Transition {
+                    NumberAnimation { property: "opacity"; from: 1; to: 0; duration: Theme.animFast }
+                }
+                replaceEnter: pushEnter
+                replaceExit: pushExit
             }
-            Item { Layout.fillWidth: true }
-            PrimaryButton {
-                text: window.page ? window.page.continueText : ""
-                enabled: window.page && window.page.canContinue
-                onClicked: {
-                    if (window.index === 3) { window.go(4); Installer.start() }
-                    else if (window.index === 5) Qt.quit()   // the real backend reboots
-                    else window.go(window.index + 1)
+
+            // Footer: Back on the left, the primary action always in the same place.
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: Theme.divider
+                visible: footer.visible
+            }
+            RowLayout {
+                id: footer
+                Layout.fillWidth: true
+                Layout.leftMargin: 32
+                Layout.rightMargin: 32
+                Layout.topMargin: 14
+                Layout.bottomMargin: 14
+                visible: window.page && window.page.showFooter
+                GhostButton {
+                    text: qsTr("Back")
+                    visible: window.page && window.page.showBack
+                    onClicked: window.go(window.index - 1)
+                }
+                Item { Layout.fillWidth: true }
+                PrimaryButton {
+                    text: window.page ? window.page.continueText : ""
+                    enabled: window.page && window.page.canContinue
+                    onClicked: {
+                        if (window.index === 3) { window.go(4); Installer.start() }
+                        else if (window.index === 5) Qt.quit()   // the real backend reboots
+                        else window.go(window.index + 1)
+                    }
                 }
             }
+        }
+    }
+
+    // Bottom-left signature, as on the desktop.
+    RowLayout {
+        anchors { left: parent.left; bottom: parent.bottom; leftMargin: 28; bottomMargin: 20 }
+        spacing: 10
+        Overline { text: "MpireOS" }
+        Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 12; color: Theme.border }
+        Text {
+            text: qsTr("Thoughtfully yours.")
+            color: Theme.textTertiary
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSmall
         }
     }
 

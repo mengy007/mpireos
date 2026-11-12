@@ -5,8 +5,9 @@ import MpireSetup
 
 SetupPage {
     id: page
+    overline: qsTr("Step 3 of 4")
     title: qsTr("Who's using this computer?")
-    subtitle: qsTr("This creates your account.")
+    subtitle: qsTr("This is your account. You can add more people later.")
 
     property bool userNameEdited: false
     readonly property bool userNameValid: /^[a-z_][a-z0-9_-]{0,31}$/.test(Installer.userName)

@@ -6,6 +6,7 @@ import MpireSetup
 // The window's bottom bar reads canContinue and continueText.
 Item {
     id: page
+    property string overline
     property string title
     property string subtitle
     property bool canContinue: true
@@ -20,21 +21,30 @@ Item {
         anchors.fill: parent
         spacing: 0
 
+        Overline {
+            Layout.fillWidth: true
+            Layout.bottomMargin: 10
+            visible: text.length > 0
+            text: page.overline
+        }
         Text {
             Layout.fillWidth: true
             visible: text.length > 0
             text: page.title
             color: Theme.text
+            font.family: Theme.fontFamily
             font.pixelSize: Theme.fontTitle
-            font.weight: Font.Bold
+            font.weight: Font.DemiBold
+            font.letterSpacing: -0.4
             wrapMode: Text.WordWrap
         }
         Text {
             Layout.fillWidth: true
-            Layout.topMargin: 10
+            Layout.topMargin: 8
             visible: text.length > 0
             text: page.subtitle
-            color: Theme.textMuted
+            color: Theme.textSecondary
+            font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSubtitle
             wrapMode: Text.WordWrap
             lineHeight: 1.2
@@ -43,8 +53,8 @@ Item {
             id: body
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.topMargin: 32
-            spacing: Theme.spacing
+            Layout.topMargin: 28
+            spacing: 12
         }
     }
 }

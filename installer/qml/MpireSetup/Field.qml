@@ -18,23 +18,26 @@ ColumnLayout {
     Text {
         id: labelText
         color: Theme.text
-        font.pixelSize: Theme.fontBody
-        font.weight: Font.Medium
+        font.family: Theme.fontFamily
+        font.pixelSize: 13
+        font.weight: Font.DemiBold
     }
     TextField {
         id: input
         Layout.fillWidth: true
-        implicitHeight: 48
+        implicitHeight: 44
         leftPadding: 16
         rightPadding: 16
         color: Theme.text
-        placeholderTextColor: Theme.textMuted
-        selectionColor: Theme.accent
-        font.pixelSize: Theme.fontSubtitle
+        placeholderTextColor: Theme.textTertiary
+        selectionColor: Theme.accentSoft
+        selectedTextColor: Theme.text
+        font.family: Theme.fontFamily
+        font.pixelSize: 15
         background: Rectangle {
             radius: Theme.radiusSmall
-            color: Theme.surface
-            border.width: input.activeFocus ? 2 : 1
+            color: input.activeFocus ? Theme.surface : Theme.surfaceSunken
+            border.width: input.activeFocus ? 1.5 : 1
             border.color: root.error ? Theme.danger
                         : input.activeFocus ? Theme.accent : Theme.border
             Behavior on border.color { ColorAnimation { duration: Theme.animFast } }
@@ -44,7 +47,8 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: root.hint.length > 0
         text: root.hint
-        color: root.error ? Theme.danger : Theme.textMuted
+        color: root.error ? Theme.danger : Theme.textSecondary
+        font.family: Theme.fontFamily
         font.pixelSize: Theme.fontSmall
         wrapMode: Text.WordWrap
     }

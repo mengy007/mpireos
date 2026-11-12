@@ -15,17 +15,18 @@ RowLayout {
             required property string modelData
             spacing: 8
             Rectangle {
-                Layout.preferredWidth: index === root.current ? 28 : 8
-                Layout.preferredHeight: 8
-                radius: 4
-                color: index <= root.current ? Theme.accent : Theme.border
+                Layout.preferredWidth: index === root.current ? 22 : 6
+                Layout.preferredHeight: 6
+                radius: 3
+                color: index <= root.current ? Theme.accent : "#D5D2DE"
                 Behavior on Layout.preferredWidth { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 Behavior on color { ColorAnimation { duration: Theme.animNormal } }
             }
             Text {
                 visible: index === root.current
                 text: modelData
-                color: Theme.textMuted
+                color: Theme.textSecondary
+                font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSmall
             }
         }

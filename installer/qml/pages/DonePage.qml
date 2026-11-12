@@ -4,6 +4,7 @@ import MpireSetup
 
 SetupPage {
     id: page
+    overline: qsTr("Done")
     title: qsTr("You're all set")
     subtitle: qsTr("MpireOS is installed. Remove the USB drive when your computer turns off, then sign in as %1.").arg(Installer.userName)
     showBack: false
@@ -13,12 +14,11 @@ SetupPage {
         Layout.preferredWidth: 96
         Layout.preferredHeight: 96
         radius: 48
-        color: Theme.success
-        opacity: 0.9
+        color: Theme.sageTint
         Text {
             anchors.centerIn: parent
             text: "✓"
-            color: "white"
+            color: Theme.success
             font.pixelSize: 48
             font.weight: Font.Bold
         }

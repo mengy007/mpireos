@@ -1,6 +1,6 @@
 # Mpire Setup
 
-The MpireOS installer: fully graphical, friendly, and asking only what it must. The design is in [docs/architecture.md](../docs/architecture.md#installer).
+The MpireOS installer: fully graphical, friendly, and asking only what it must. The flow is in [docs/architecture.md](../docs/architecture.md#installer) and the look follows [docs/design-system.md](../docs/design-system.md).
 
 ## Status
 
@@ -34,7 +34,7 @@ pip install PySide6-Essentials
 python3 installer/tools/preview.py
 ```
 
-Native build (Qt 6.5+):
+Native build (Qt 6.9+):
 
 ```sh
 cmake -S installer -B build/installer && cmake --build build/installer

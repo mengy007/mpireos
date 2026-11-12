@@ -8,3 +8,5 @@ Field 1.0 Field.qml
 StepIndicator 1.0 StepIndicator.qml
 SetupPage 1.0 SetupPage.qml
 SummaryRow 1.0 SummaryRow.qml
+Overline 1.0 Overline.qml
+SoftShadow 1.0 SoftShadow.qml

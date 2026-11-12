@@ -4,8 +4,9 @@ import MpireSetup
 
 Button {
     id: control
-    implicitHeight: 48
+    implicitHeight: 44
     implicitWidth: contentItem.implicitWidth + 40
+    font.family: Theme.fontFamily
     font.pixelSize: Theme.fontBody
     hoverEnabled: true
 
@@ -18,8 +19,8 @@ Button {
         Behavior on color { ColorAnimation { duration: Theme.animFast } }
     }
     background: Rectangle {
-        radius: height / 2
-        color: control.hovered ? Theme.surface : "transparent"
+        radius: Theme.radiusSmall
+        color: control.hovered ? Theme.surfaceHover : "transparent"
         Behavior on color { ColorAnimation { duration: Theme.animFast } }
     }
 }

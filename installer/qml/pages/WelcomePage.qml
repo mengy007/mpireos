@@ -5,8 +5,9 @@ import MpireSetup
 
 SetupPage {
     id: page
+    overline: Qt.formatDate(new Date(), "dddd, MMMM d")
     title: qsTr("Welcome to MpireOS")
-    subtitle: qsTr("Let's get you set up. It only takes a few minutes.")
+    subtitle: qsTr("A little space for everything. Let's set yours up; it only takes a few minutes.")
     showBack: false
     showFooter: false
 
@@ -38,7 +39,7 @@ SetupPage {
             }
             background: Rectangle {
                 radius: Theme.radiusSmall
-                color: Theme.surface
+                color: Theme.surfaceSunken
                 border.color: language.activeFocus ? Theme.accent : Theme.border
             }
         }
@@ -51,6 +52,7 @@ SetupPage {
         glyph: "↓"
         selectable: false
         badgeColor: Theme.accent
+        glyphColor: "white"
         title: qsTr("Install MpireOS")
         description: qsTr("Set up MpireOS on this computer.")
         onClicked: page.installChosen()
@@ -58,6 +60,8 @@ SetupPage {
     ChoiceCard {
         Layout.fillWidth: true
         glyph: "▶"
+        badgeColor: Theme.skyTint
+        glyphColor: Theme.sky
         selectable: false
         title: qsTr("Try it first")
         description: qsTr("Keep using MpireOS from this USB drive. Nothing on your computer changes, and you can install any time.")
