@@ -7,7 +7,8 @@ MpireOS grows in small, shippable steps. Each milestone ends with something peop
 - [x] Name, license (GPLv3), and repository
 - [x] Architecture document ([docs/architecture.md](docs/architecture.md))
 - [x] Contributor guide
-- [ ] Visual identity direction: logo, color palette, typography, wallpaper
+- [x] Visual direction and design system ([docs/design-system.md](docs/design-system.md))
+- [ ] Logo, wordmark, and default wallpaper
 - [ ] Domain registration and a trademark check for "MpireOS"
 - [ ] Code of conduct
 
@@ -31,7 +32,8 @@ Goal: a developer ISO that boots in a VM and on common hardware, and installs to
 
 Goal: boot and install straight into Mpire Desktop, with no Plasma.
 
-- [ ] Design system: colors, type, spacing, motion, icons (shared with Mpire Setup)
+- [ ] `MpireOS.Style` QML module implementing the design system (shared with Mpire Setup)
+- [ ] Desktop widgets: Today, A moment of focus, Now playing
 - [ ] `mpire-session`: starts KWin and the shell
 - [ ] `mpire-shell`: top bar, dock, app launcher, notifications, quick settings, volume and brightness pop-ups
 - [ ] `mpire-greeter` and `mpire-lock`
