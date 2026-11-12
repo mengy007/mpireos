@@ -6,7 +6,7 @@ MpireOS is a US-based, open source Linux distribution focused on a polished, coh
 
 ## Why MpireOS
 
-- **A desktop that feels designed, not assembled.** One visual language across the shell, settings, and core apps, in the spirit of Deepin, built in the open.
+- **Its own desktop, designed end to end.** Mpire Desktop covers the login screen, shell, settings, and core apps in one visual language, in the spirit of Deepin, built in the open.
 - **The Arch ecosystem with stability.** Full access to Arch packages and the AUR, delivered through MpireOS's own tested channels instead of straight from the rolling firehose.
 - **Every update can be undone.** Btrfs snapshots are taken automatically before each update, and you can boot into any earlier one from the boot menu.
 - **US-based and transparent.** Governance, infrastructure, and release signing are based in the United States. Builds run in public CI, and there is no telemetry by default.
@@ -18,7 +18,7 @@ MpireOS is a US-based, open source Linux distribution focused on a polished, coh
 | Base | Arch Linux (x86_64) |
 | Package channels | `testing` and `stable`, both promoted from dated Arch snapshots |
 | Filesystem | Btrfs with snapper and boot-menu rollback |
-| Desktop | KDE Plasma 6 on Wayland, themed and preconfigured, with MpireOS components replacing parts over time |
+| Desktop | Mpire Desktop, MpireOS's own Qt 6 / QML desktop environment, on the KWin Wayland compositor |
 | Installer | Mpire Setup, MpireOS's own guided graphical installer |
 | Image build | archiso, built in GitHub Actions |
 
