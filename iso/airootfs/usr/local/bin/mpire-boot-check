@@ -17,14 +17,22 @@ fi
 setup_check() {
     id live &>/dev/null || return 0
     grep -q 'mpire\.autoinstall' /proc/cmdline && return 0
-    for _ in $(seq 1 120); do
-        if pgrep -u live -x mpire-setup >/dev/null; then report "MPIREOS_SETUP_OK"; return 0; fi
+    # It must start and keep running (a QML error would make it exit at once).
+    local alive=0
+    for _ in $(seq 1 150); do
+        if pgrep -u live -x mpire-setup >/dev/null; then alive=$((alive + 1)); else alive=0; fi
+        if [ $alive -ge 20 ]; then report "MPIREOS_SETUP_OK"; setup_log; return 0; fi
         sleep 1
     done
     report "MPIREOS_SETUP_FAIL"
-    journalctl -b _UID="$(id -u live)" --no-pager -n 40 2>/dev/null | grep -i -e setup -e qml \
+    setup_log
+    journalctl -b _UID="$(id -u live)" --no-pager -n 60 2>/dev/null | grep -i -e setup -e qml -e autostart \
         | while read -r line; do report "MPIREOS_SETUP_LOG $line"; done
     return 1
+}
+setup_log() {
+    [ -f /tmp/mpire-setup.log ] || { report "MPIREOS_SETUP_LOG (no output)"; return; }
+    tail -n 40 /tmp/mpire-setup.log | while read -r line; do report "MPIREOS_SETUP_LOG $line"; done
 }
 for _ in $(seq 1 240); do
     if check; then report "$ok"; setup_check; exit $?; fi
