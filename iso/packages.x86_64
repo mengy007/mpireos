@@ -62,5 +62,9 @@ efibootmgr
 arch-install-scripts
 os-prober
 
+# MpireOS
+mpire-base
+mpire-keyring
+
 # Base tools
 sudo

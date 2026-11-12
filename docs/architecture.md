@@ -98,14 +98,16 @@ Compression (`zstd`) is on by default.
 
 GRUB is used instead of systemd-boot because snapshot booting is mature on GRUB. This can be revisited.
 
-### `mpire-update`
+### `mpire-update` and automatic updates
 
-A small command, and later a graphical updater, that wraps the update flow:
+Installed systems keep themselves up to date; nobody should need to reinstall to get a newer MpireOS.
 
-1. Shows MpireOS release news, including any manual steps.
-2. Takes a labeled snapshot.
-3. Updates pacman packages, then Flatpaks.
-4. Reports the result and how to roll back if needed.
+- **What moves:** each channel is a dated Arch snapshot. CI publishes the current date for each channel (`stable.channel`, `testing.channel`) alongside MpireOS's own packages in the `repo` release on GitHub. `mpire-update` reads the date for the system's channel, points `/etc/pacman.d/mpire-snapshot` at it (never backwards), and upgrades.
+- **MpireOS's own pieces update the same way.** Branding, defaults, the updater itself, and later the desktop are pacman packages in the `[mpire]` repository (`packages/`), so a change merged to `main` reaches every installed system on its next update.
+- **Safe by default:** snap-pac takes a Btrfs snapshot before and after the upgrade, keyrings update first, and if the database refresh fails the previous snapshot date is restored. If an upgrade breaks something, the "before" snapshot is in the boot menu.
+- **Automatic:** `mpire-update.timer` runs daily (20 minutes after boot, then every day, randomized by up to an hour), only on AC power, at low CPU and I/O priority. It also updates Flatpak apps. `AUTO=no` in `/etc/mpireos/update.conf` turns it off.
+- **Manual:** `mpire-update` (asks first), `mpire-update --check`, `mpire-update --yes`. A graphical updater in Settings will use the same tool.
+- **Signing:** packages and the repository database are signed in CI with the project key (`MPIRE_SIGNING_KEY` secret, public key in `mpire-keyring`). Until that key exists the repository is used with `SigLevel = Optional TrustedOnly`, and it must be switched to `Required` before any public release.
 
 Running `pacman -Syu` directly still works and is still covered by snap-pac.
 

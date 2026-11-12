@@ -1,7 +1,8 @@
 # MpireOS pacman configuration.
-# Packages come from a dated Arch Linux snapshot chosen by the release channel
-# (see channels/ and docs/architecture.md), not from live Arch mirrors.
-# @SNAPSHOT@ is replaced at build time.
+#
+# [mpire] holds MpireOS's own packages. [core] and [extra] come from a dated Arch
+# Linux snapshot chosen by the release channel (/etc/pacman.d/mpire-snapshot,
+# managed by mpire-update), not from live Arch mirrors.
 
 [options]
 HoldPkg     = pacman glibc
@@ -11,8 +12,13 @@ ParallelDownloads = 5
 SigLevel    = Required DatabaseOptional
 LocalFileSigLevel = Optional
 
+[mpire]
+# TODO: switch to "Required" once the project signing key exists (packages/mpire-keyring).
+SigLevel = Optional TrustedOnly
+Server = https://github.com/mengy007/mpireos/releases/download/repo
+
 [core]
-Server = https://archive.archlinux.org/repos/@SNAPSHOT@/$repo/os/$arch
+Include = /etc/pacman.d/mpire-snapshot
 
 [extra]
-Server = https://archive.archlinux.org/repos/@SNAPSHOT@/$repo/os/$arch
+Include = /etc/pacman.d/mpire-snapshot

@@ -1,0 +1,15 @@
+# Maintainer: MpireOS contributors
+pkgname=mpire-keyring
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="MpireOS package signing keys"
+arch=('any')
+url="https://github.com/mengy007/mpireos"
+license=('GPL-3.0-or-later')
+install=mpire-keyring.install
+source=('mpireos.gpg' 'mpireos-trusted' 'mpireos-revoked')
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+    install -Dm644 -t "$pkgdir/usr/share/pacman/keyrings" mpireos.gpg mpireos-trusted mpireos-revoked
+}

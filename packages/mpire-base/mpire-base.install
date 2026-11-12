@@ -1,0 +1,6 @@
+post_install() {
+    /usr/lib/mpireos/mpire-os-release
+}
+post_upgrade() {
+    /usr/lib/mpireos/mpire-os-release
+}
