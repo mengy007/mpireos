@@ -1,0 +1,18 @@
+# MpireOS pacman configuration.
+# Packages come from a dated Arch Linux snapshot chosen by the release channel
+# (see channels/ and docs/architecture.md), not from live Arch mirrors.
+# @SNAPSHOT@ is replaced at build time.
+
+[options]
+HoldPkg     = pacman glibc
+Architecture = auto
+CheckSpace
+ParallelDownloads = 5
+SigLevel    = Required DatabaseOptional
+LocalFileSigLevel = Optional
+
+[core]
+Server = https://archive.archlinux.org/repos/@SNAPSHOT@/$repo/os/$arch
+
+[extra]
+Server = https://archive.archlinux.org/repos/@SNAPSHOT@/$repo/os/$arch
