@@ -1,0 +1,10 @@
+module MpireSetup
+singleton Theme 1.0 Theme.qml
+singleton Installer 1.0 MockInstaller.qml
+PrimaryButton 1.0 PrimaryButton.qml
+GhostButton 1.0 GhostButton.qml
+ChoiceCard 1.0 ChoiceCard.qml
+Field 1.0 Field.qml
+StepIndicator 1.0 StepIndicator.qml
+SetupPage 1.0 SetupPage.qml
+SummaryRow 1.0 SummaryRow.qml
