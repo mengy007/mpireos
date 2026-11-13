@@ -1,7 +1,9 @@
 #!/bin/bash
 # Reports whether the graphical session came up, for CI boot tests.
-#   Live ISO:         waits for the live user's Plasma shell -> MPIREOS_DESKTOP_OK
-#   Installed system: waits for the SDDM login screen        -> MPIREOS_GREETER_OK
+#   Live ISO:         waits for the live user's Plasma shell  -> MPIREOS_DESKTOP_OK
+#                     then for Mpire Setup to open by itself  -> MPIREOS_SETUP_OK
+#                     (skipped for unattended installs)
+#   Installed system: waits for the SDDM login screen         -> MPIREOS_GREETER_OK
 # Markers go to the kernel log and the serial console; scripts/smoke-test.sh reads them.
 report() {
     echo "<2>$1" > /dev/kmsg 2>/dev/null || true
@@ -12,8 +14,28 @@ if id live &>/dev/null; then
 else
     ok="MPIREOS_GREETER_OK"; check() { pgrep -f sddm-greeter >/dev/null; }
 fi
+setup_check() {
+    id live &>/dev/null || return 0
+    grep -q 'mpire\.autoinstall' /proc/cmdline && return 0
+    # It must start and keep running (a QML error would make it exit at once).
+    local alive=0
+    for _ in $(seq 1 150); do
+        if pgrep -u live -x mpire-setup >/dev/null; then alive=$((alive + 1)); else alive=0; fi
+        if [ $alive -ge 20 ]; then report "MPIREOS_SETUP_OK"; setup_log; return 0; fi
+        sleep 1
+    done
+    report "MPIREOS_SETUP_FAIL"
+    setup_log
+    journalctl -b _UID="$(id -u live)" --no-pager -n 60 2>/dev/null | grep -i -e setup -e qml -e autostart \
+        | while read -r line; do report "MPIREOS_SETUP_LOG $line"; done
+    return 1
+}
+setup_log() {
+    [ -f /tmp/mpire-setup.log ] || { report "MPIREOS_SETUP_LOG (no output)"; return; }
+    tail -n 40 /tmp/mpire-setup.log | while read -r line; do report "MPIREOS_SETUP_LOG $line"; done
+}
 for _ in $(seq 1 240); do
-    if check; then report "$ok"; exit 0; fi
+    if check; then report "$ok"; setup_check; exit $?; fi
     sleep 1
 done
 report "MPIREOS_DESKTOP_FAIL"

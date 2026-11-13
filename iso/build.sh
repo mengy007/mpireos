@@ -68,6 +68,7 @@ file_permissions+=(
   ["/usr/local/bin/mpire-boot-check"]="0:0:755"
   ["/usr/local/bin/mpire-install"]="0:0:755"
   ["/usr/local/bin/mpire-autoinstall"]="0:0:755"
+  ["/usr/local/bin/mpire-setup-live"]="0:0:755"
 )
 PERMS
 

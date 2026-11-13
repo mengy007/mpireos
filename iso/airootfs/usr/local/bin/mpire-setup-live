@@ -1,0 +1,7 @@
+#!/bin/bash
+# Live ISO only: opens Mpire Setup full screen when the live session starts,
+# and from the "Install MpireOS" launcher. Unattended CI installs skip it.
+grep -q 'mpire\.autoinstall' /proc/cmdline && exit 0
+pgrep -u "$(id -u)" -x mpire-setup >/dev/null && exit 0
+# Keep its output: the CI boot check reports it, and it helps bug reports.
+exec /usr/bin/mpire-setup "$@" >> /tmp/mpire-setup.log 2>&1

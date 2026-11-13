@@ -1,0 +1,24 @@
+# Maintainer: MpireOS contributors
+# Mpire Setup, the MpireOS installer frontend. Built from installer/ in this
+# repository: scripts/build-packages.sh copies it next to this PKGBUILD.
+pkgname=mpire-setup
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Mpire Setup: the guided graphical installer for MpireOS"
+arch=('x86_64')
+url="https://github.com/mengy007/mpireos"
+license=('GPL-3.0-or-later')
+depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'inter-font' 'sudo' 'util-linux')
+makedepends=('cmake' 'ninja')
+
+build() {
+    cmake -S "$startdir/installer" -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DMPIRE_SETUP_RUN_FROM_SOURCE=OFF
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}

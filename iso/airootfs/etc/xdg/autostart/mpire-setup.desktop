@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Install MpireOS
+Comment=Open Mpire Setup when the live session starts
+Exec=/usr/local/bin/mpire-setup-live
+Icon=system-software-install
+NoDisplay=true
+X-KDE-autostart-phase=2

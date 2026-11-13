@@ -1,6 +1,6 @@
 module MpireSetup
 singleton Theme 1.0 Theme.qml
-singleton Installer 1.0 MockInstaller.qml
+singleton Installer 1.0 Installer.qml
 PrimaryButton 1.0 PrimaryButton.qml
 GhostButton 1.0 GhostButton.qml
 ChoiceCard 1.0 ChoiceCard.qml

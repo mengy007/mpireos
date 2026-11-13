@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Install MpireOS
+GenericName=Installer
+Comment=Install MpireOS on this computer
+Exec=/usr/local/bin/mpire-setup-live
+Icon=system-software-install
+Categories=System;

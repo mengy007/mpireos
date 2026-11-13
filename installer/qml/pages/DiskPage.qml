@@ -7,9 +7,18 @@ SetupPage {
     id: page
     overline: qsTr("Step 2 of 4")
     title: qsTr("Where should MpireOS go?")
-    subtitle: Installer.disks.length > 1
+    subtitle: Installer.disks.length === 0
+              ? qsTr("MpireOS needs a disk of at least 12 GB, and none was found. Connect one, then check again.")
+              : Installer.disks.length > 1
               ? qsTr("Choose a disk, then how to use it.")
               : qsTr("MpireOS will be installed on %1 (%2).").arg(Installer.disk.name).arg(Installer.disk.size)
+    canContinue: Installer.disks.length > 0
+
+    GhostButton {
+        visible: Installer.disks.length === 0 && Installer.real
+        text: qsTr("Check again")
+        onClicked: Installer.system.refreshDisks()
+    }
 
     // Disk picker only appears when there is a real choice to make.
     Flow {
@@ -33,19 +42,22 @@ SetupPage {
 
     ChoiceCard {
         Layout.fillWidth: true
+        visible: Installer.disks.length > 0
         glyph: "✦"
         badgeColor: Theme.lavenderTint
         glyphColor: Theme.accent
         title: qsTr("Erase disk and install MpireOS")
         description: Installer.disk.otherOs
                      ? qsTr("<font color='%1'>This removes %2 and all files on this disk.</font>").arg(Theme.danger).arg(Installer.disk.otherOs)
-                     : qsTr("Uses the whole disk. Anything already on it will be removed.")
+                     : Installer.disk.hasData
+                     ? qsTr("<font color='%1'>This disk has files on it. They will all be removed.</font>").arg(Theme.danger)
+                     : qsTr("Uses the whole disk.")
         selected: Installer.diskMode === "erase"
         onClicked: Installer.diskMode = "erase"
     }
     ChoiceCard {
         Layout.fillWidth: true
-        visible: !!Installer.disk.otherOs
+        visible: Installer.alongsideSupported && !!Installer.disk.otherOs
         glyph: "⇆"
         badgeColor: Theme.sageTint
         glyphColor: Theme.sage
@@ -57,6 +69,7 @@ SetupPage {
 
     Rectangle {
         Layout.fillWidth: true
+        visible: Installer.disks.length > 0
         Layout.topMargin: 8
         implicitHeight: encryptRow.implicitHeight + 32
         radius: Theme.radius

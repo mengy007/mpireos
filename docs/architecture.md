@@ -196,8 +196,8 @@ If an encryption passphrase is needed, MpireOS reuses the account password by de
 
 ### How it is built
 
-- **Frontend:** Qt 6 / QML, in `installer/`. It never touches disks itself.
-- **Backend:** a small privileged service that the frontend drives over D-Bus with a single install plan (disk, encryption, user, locale). It partitions, creates the Btrfs subvolumes, copies the live system, installs the bootloader, configures snapper, creates the user, and removes live-only packages. Every step reports progress and logs to a file the user can save if something fails.
+- **Frontend:** Qt 6 / QML, in `installer/`, packaged as `mpire-setup`. It never touches disks itself. On the live ISO it opens full screen as soon as the live session starts.
+- **Backend:** `mpire-install`, a privileged program that the frontend starts with a single install plan (disk, encryption, user, locale) and that reports progress as JSON lines. On the live ISO it runs through `sudo`, which the live user may use without a password; the live-only rule is removed from installed systems. It partitions, creates the Btrfs subvolumes, copies the live system, installs the bootloader, configures snapper, creates the user, and removes live-only packages. Every step reports progress and logs to a file the user can save if something fails.
 - **Tested in CI:** the backend runs unattended from a plan file, so the QEMU smoke test performs a real install on every ISO build.
 
 Building our own installer is more work than reusing Calamares, but the installer is the first thing anyone sees, and Calamares cannot easily be cut down to this flow or made to look native. Calamares stays available as a fallback in development builds until Mpire Setup covers dual boot and encryption.
