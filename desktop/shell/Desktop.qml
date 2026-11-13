@@ -64,7 +64,13 @@ Item {
         }
     }
 
-    TopBar { anchors { left: parent.left; right: parent.right; top: parent.top } now: desktop.now }
+    TopBar {
+        anchors { left: parent.left; right: parent.right; top: parent.top }
+        now: desktop.now
+        // Sample content for the preview; the running shell fills in real values.
+        appName: "Files"; menus: ["Applications", "View"]; workspace: "Personal space"
+        battery: 98; showNotifications: true
+    }
 
     Dock {
         anchors.horizontalCenter: parent.horizontalCenter

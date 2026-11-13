@@ -3,13 +3,29 @@ import QtQuick.Layouts
 import MpireOS.Style
 
 // The frosted top bar: mark and app menus, workspace pill, status tray, clock.
+// Parts with nothing real to show stay hidden: no app name or menus until the
+// shell tracks the active window, no battery on desktops, no bell until
+// notifications exist.
 Rectangle {
     id: bar
-    property string appName: "Files"
-    property var menus: ["Applications", "View"]
-    property string workspace: "Personal space"
-    property int battery: 98
+    property string appName: ""
+    property var menus: []
+    property string workspace: ""
+    property int battery: -1               // percent, or -1 when there is no battery
+    property bool showNotifications: false
     property date now: new Date()
+
+    signal searchClicked()
+    signal networkClicked()
+    signal settingsClicked()
+
+    component TrayIcon: Icon {
+        signal clicked()
+        size: 18
+        color: Theme.text
+        opacity: trayArea.containsMouse ? 0.7 : 1
+        MouseArea { id: trayArea; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: parent.clicked() }
+    }
 
     implicitHeight: 44
     color: Theme.chrome
@@ -30,8 +46,9 @@ Rectangle {
             font.weight: Font.DemiBold
             font.letterSpacing: -0.4
         }
-        Rectangle { Layout.leftMargin: 16; Layout.rightMargin: 16; Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: Theme.border }
+        Rectangle { visible: bar.appName.length > 0; Layout.leftMargin: 16; Layout.rightMargin: 16; Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: Theme.border }
         Text {
+            visible: bar.appName.length > 0
             text: bar.appName
             color: Theme.text
             font.family: Theme.fontFamily
@@ -54,6 +71,7 @@ Rectangle {
 
     // Workspace pill, centered on the screen.
     Rectangle {
+        visible: bar.workspace.length > 0
         anchors.centerIn: parent
         height: 28
         width: wsRow.implicitWidth + 24
@@ -80,11 +98,12 @@ Rectangle {
         anchors.rightMargin: 24
         anchors.verticalCenter: parent.verticalCenter
         spacing: 18
-        Icon { name: "search"; size: 18; color: Theme.text }
-        Icon { name: "bell"; size: 18; color: Theme.text }
-        Icon { name: "wifi"; size: 18; color: Theme.text }
-        Icon { name: "sliders"; size: 18; color: Theme.text }
+        TrayIcon { name: "search"; onClicked: bar.searchClicked() }
+        TrayIcon { name: "bell"; visible: bar.showNotifications }
+        TrayIcon { name: "wifi"; onClicked: bar.networkClicked() }
+        TrayIcon { name: "sliders"; onClicked: bar.settingsClicked() }
         RowLayout {
+            visible: bar.battery >= 0
             spacing: 6
             Icon { name: "battery"; size: 20; color: Theme.text }
             Text {

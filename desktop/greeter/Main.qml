@@ -1,8 +1,9 @@
 import QtQuick
+import QtQml
+import QtQml.Models
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import MpireOS.Style
-import "../shell" as Shell
 
 // mpire-greeter: the MpireOS login screen, as an SDDM theme.
 // Uses SDDM's context objects (sddm, userModel, sessionModel) when they exist,
@@ -13,11 +14,33 @@ Item {
     height: 936
 
     readonly property bool inSddm: typeof sddm !== "undefined"
-    property string userName: inSddm ? userModel.lastUser : "jordan"
-    property string realName: "Jordan Lee"
+    // The last user to sign in, or else the first account on this computer.
+    property string userName: inSddm ? (userModel.lastUser || firstUser()) : "jordan"
+    property string realName: inSddm ? displayName(userName) : "Jordan Lee"
     property int sessionIndex: inSddm ? sessionModel.lastIndex : 0
     property date now: new Date()
     property bool failed: false
+
+    // SDDM's userModel, read through an Instantiator (it is a list model).
+    Instantiator {
+        id: users
+        model: root.inSddm ? userModel : 0
+        delegate: QtObject {
+            required property string name
+            required property string realName
+        }
+    }
+    function firstUser() {
+        const u = users.count > 0 ? users.objectAt(0) : null
+        return u ? u.name : ""
+    }
+    function displayName(name) {
+        for (let i = 0; i < users.count; i++) {
+            const u = users.objectAt(i)
+            if (u && u.name === name) return u.realName || u.name
+        }
+        return name
+    }
 
     function login() {
         if (inSddm) sddm.login(userName, password.text, sessionIndex)
@@ -30,19 +53,6 @@ Item {
     Timer { interval: 1000; repeat: true; running: true; onTriggered: root.now = new Date() }
 
     Backdrop { anchors.fill: parent }
-
-    // Status, top right
-    RowLayout {
-        anchors { top: parent.top; right: parent.right; topMargin: 22; rightMargin: 28 }
-        spacing: 18
-        Icon { name: "keyboard"; size: 18; color: Theme.text }
-        Icon { name: "wifi"; size: 18; color: Theme.text }
-        RowLayout {
-            spacing: 6
-            Icon { name: "battery"; size: 20; color: Theme.text }
-            Label { role: "small"; text: "98%" }
-        }
-    }
 
     ColumnLayout {
         anchors.centerIn: parent
@@ -95,7 +105,7 @@ Item {
                     }
                     Text {
                         anchors.centerIn: parent
-                        text: root.realName.charAt(0)
+                        text: root.realName.charAt(0).toUpperCase()
                         color: "white"
                         font.family: Theme.fontFamily
                         font.pixelSize: 26
@@ -157,7 +167,7 @@ Item {
     RowLayout {
         anchors { left: parent.left; bottom: parent.bottom; leftMargin: 32; bottomMargin: 28 }
         spacing: 10
-        Shell.Mark { size: 14 }
+        Mark { size: 14 }
         Overline { text: "MpireOS" }
         Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 12; color: Theme.border }
         Label { role: "small"; secondary: true; text: qsTr("Thoughtfully yours."); font.pixelSize: 11 }

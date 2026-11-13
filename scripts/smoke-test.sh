@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Boots an MpireOS ISO in QEMU and waits for the live desktop to start.
 # Usage: scripts/smoke-test.sh path/to.iso [timeout-seconds]
-# Passes when the image prints MPIREOS_DESKTOP_OK and MPIREOS_SETUP_OK (the
-# installer opened by itself) on its serial console.
+# Passes when the image prints MPIREOS_DESKTOP_OK (Mpire Desktop's shell is up)
+# and MPIREOS_SETUP_OK (the installer opened by itself) on its serial console.
 set -euo pipefail
 iso="$1"
 timeout="${2:-1200}"
@@ -23,24 +23,8 @@ qemu-system-x86_64 "${accel[@]}" -m 4096 -smp 2 \
 qemu=$!
 trap 'kill $qemu 2>/dev/null || true' EXIT
 
-# Saves what the screen shows to $shot (PPM), and prints it gzipped and
-# base64-encoded between markers so it can be read from the CI log too.
-screenshot() {
-    python3 - "$monitor" "$shot" <<'PY' || true
-import socket, sys, time
-s = socket.socket(socket.AF_UNIX)
-s.connect(sys.argv[1])
-s.sendall(f"screendump {sys.argv[2]}\n".encode())
-time.sleep(3)
-s.close()
-PY
-    if [[ -s $shot ]]; then
-        echo "SCREENSHOT_BEGIN $(basename "$shot").gz"
-        gzip -c "$shot" | base64 -w 0
-        echo
-        echo "SCREENSHOT_END"
-    fi
-}
+source "$(dirname "$0")/qemu-screenshot.sh"
+screenshot() { qemu_screenshot "$monitor" "$shot"; }
 
 for ((t = 0; t < timeout; t += 5)); do
     if grep -q MPIREOS_DESKTOP_OK "$log" && grep -q MPIREOS_SETUP_OK "$log"; then

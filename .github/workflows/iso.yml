@@ -60,7 +60,7 @@ jobs:
       - name: Install test (UEFI, unattended install then boot)
         run: |
           sudo apt-get install -yq --no-install-recommends ovmf xorriso qemu-utils
-          INSTALL_LOG=out/install-serial.log BOOT_LOG=out/installed-serial.log \
+          INSTALL_LOG=out/install-serial.log BOOT_LOG=out/installed-serial.log SCREENSHOT=out/login-screen.ppm \
             scripts/install-test.sh out/*.iso 2400
 
       - name: Upload ISO

@@ -156,7 +156,7 @@ Mpire Desktop builds on standard Linux services and freedesktop.org protocols in
 
 ### Scaffolding during development
 
-Until `mpire-shell` and `mpire-settings` reach a usable state, development ISOs boot into KDE Plasma so the build, installer, and update pipelines can be tested end to end. Plasma is scaffolding only: **no public release ships with it.** It is removed from the ISO as soon as Mpire Desktop can run a full session.
+Development ISOs boot into **Mpire Desktop running on top of the Plasma session**: `mpire-shell` takes `plasmashell`'s place (a systemd drop-in on `plasma-plasmashell.service`), and the login screen is MpireOS's SDDM theme. Underneath, KWin, KRunner, Plasma's settings, and the KDE apps remain, so everything keeps working while our own pieces replace them one by one. Plasma is scaffolding only: **no public release ships with it.** It is removed from the ISO as soon as Mpire Desktop can run a full session of its own.
 
 ## Installer
 
