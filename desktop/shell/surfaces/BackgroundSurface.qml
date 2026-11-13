@@ -74,6 +74,6 @@ Item {
             color: "transparent"; border.color: Theme.border
             Label { id: kbd; anchors.centerIn: parent; role: "small"; secondary: true; text: "Alt Space"; font.pixelSize: 10 }
         }
-        TapHandler { onTapped: shellApi.launch("krunner") }
+        TapHandler { onTapped: shellApi.TogglePanel("launcher") }
     }
 }

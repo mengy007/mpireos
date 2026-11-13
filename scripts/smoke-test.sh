@@ -43,6 +43,27 @@ for ((t = 0; t < timeout; t += 5)); do
         done
         grep -a MPIREOS_APP "$log" || true
         qemu_screenshot "$monitor" "${shot%.ppm}-app.ppm"
+        # Then the boot check shows a notification, quick settings, and the
+        # notification list; each gets a screenshot. Finally the launcher, opened
+        # with Alt+Space (the real shortcut), and a search typed into it.
+        wait_for() {
+            for ((w = 0; w < 90; w += 2)); do grep -q "$1" "$log" && return 0; sleep 2; done
+            echo "note: $1 not seen"; return 1
+        }
+        wait_for MPIREOS_NOTIFY_SHOWN && qemu_screenshot "$monitor" "${shot%.ppm}-notify.ppm"
+        wait_for MPIREOS_QUICK_SHOWN && { sleep 2; qemu_screenshot "$monitor" "${shot%.ppm}-quick.ppm"; }
+        wait_for MPIREOS_CENTER_SHOWN && { sleep 2; qemu_screenshot "$monitor" "${shot%.ppm}-center.ppm"; }
+        if wait_for MPIREOS_PANELS_DONE; then
+            sleep 3
+            qemu_key "$monitor" alt-spc
+            sleep 3
+            qemu_screenshot "$monitor" "${shot%.ppm}-launcher.ppm"
+            for k in s e t t; do qemu_key "$monitor" "$k"; sleep 0.3; done
+            sleep 2
+            qemu_screenshot "$monitor" "${shot%.ppm}-search.ppm"
+            qemu_key "$monitor" esc
+        fi
+        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT "$log" || true
         exit 0
     fi
     if grep -q -e MPIREOS_DESKTOP_FAIL -e MPIREOS_SETUP_FAIL "$log"; then
