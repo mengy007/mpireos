@@ -1,0 +1,15 @@
+# MpireOS window defaults: light, quiet title bars with buttons on the right.
+[org.kde.kdecoration2]
+library=org.kde.breeze
+theme=Breeze
+ButtonsOnLeft=
+ButtonsOnRight=IAX
+BorderSize=None
+BorderSizeAuto=false
+
+[Plugins]
+blurEnabled=true
+contrastEnabled=true
+
+[Windows]
+BorderlessMaximizedWindows=false

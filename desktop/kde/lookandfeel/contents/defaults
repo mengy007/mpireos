@@ -1,0 +1,32 @@
+# Plasma copies these into each user's ~/.config/kdedefaults at login, where
+# they take priority over /etc/xdg. Pieces this package doesn't provide (lock
+# screen, logout screen) fall back to Breeze until MpireOS's own replace them.
+[kdeglobals][KDE]
+widgetStyle=Breeze
+
+[kdeglobals][General]
+ColorScheme=MpireOS
+AccentColor=124,102,214
+
+[kdeglobals][Icons]
+Theme=breeze
+
+[plasmarc][Theme]
+name=default
+
+[kcminputrc][Mouse]
+cursorTheme=breeze_cursors
+
+[kwinrc][WindowSwitcher]
+LayoutName=org.kde.breeze.desktop
+
+[kwinrc][DesktopSwitcher]
+LayoutName=org.kde.breeze.desktop
+
+[kwinrc][org.kde.kdecoration2]
+library=org.kde.breeze
+theme=Breeze
+
+[KSplash]
+Engine=none
+Theme=None

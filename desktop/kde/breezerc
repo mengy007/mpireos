@@ -1,0 +1,12 @@
+# Breeze window decoration, tuned to blend with MpireOS: no separator line,
+# title bar in the window's own color, soft large shadows.
+[Common]
+OutlineIntensity=OutlineOff
+ShadowSize=ShadowVeryLarge
+ShadowStrength=60
+ShadowColor=60,48,110
+
+[Windeco]
+DrawTitleBarSeparator=false
+TitleAlignment=AlignCenterFullWidth
+ButtonSize=ButtonDefault

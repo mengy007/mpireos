@@ -1,0 +1,4 @@
+# No Plasma splash screen: the MpireOS desktop appears directly after login.
+[KSplash]
+Engine=none
+Theme=None
