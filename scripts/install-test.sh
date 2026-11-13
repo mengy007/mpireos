@@ -67,8 +67,16 @@ kill $qemu 2>/dev/null || true
 
 echo "==> Phase 2: boot the installed system"
 : > "$boot_log"
-qemu-system-x86_64 "${common[@]}" -serial "file:$boot_log" &
+monitor="$work/monitor.sock"
+qemu-system-x86_64 "${common[@]}" -serial "file:$boot_log" -monitor "unix:$monitor,server,nowait" &
 qemu=$!
 trap 'kill $qemu 2>/dev/null || true' EXIT
-wait_for "$boot_log" MPIREOS_GREETER_OK MPIREOS_DESKTOP_FAIL $qemu
-echo "PASS: installed system boots to the login screen"
+source "$(dirname "$0")/qemu-screenshot.sh"
+shot="$(realpath -m "${SCREENSHOT:-login-screen.ppm}")"
+if ! wait_for "$boot_log" MPIREOS_GREETER_OK "MPIREOS_DESKTOP_FAIL|MPIREOS_GREETER_FAIL" $qemu; then
+    qemu_screenshot "$monitor" "$shot"
+    exit 1
+fi
+grep -a MPIREOS_GREETER_LOG "$boot_log" || true
+qemu_screenshot "$monitor" "$shot"
+echo "PASS: installed system boots to the MpireOS login screen"

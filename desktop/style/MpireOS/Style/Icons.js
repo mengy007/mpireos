@@ -14,6 +14,8 @@ var paths = {
     grid: "<rect x='4' y='4' width='6.5' height='6.5' rx='1.8'/><rect x='13.5' y='4' width='6.5' height='6.5' rx='1.8'/><rect x='4' y='13.5' width='6.5' height='6.5' rx='1.8'/><rect x='13.5' y='13.5' width='6.5' height='6.5' rx='1.8'/>",
     settings: "<circle cx='12' cy='12' r='3'/><path d='M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4L18 18M6 18l1.6-1.6M16.4 7.6L18 6'/><circle cx='12' cy='12' r='6.3'/>",
     headphones: "<path d='M4 18v-5.5a8 8 0 0 1 16 0V18'/><rect x='3.5' y='14' width='4.5' height='6.5' rx='1.8'/><rect x='16' y='14' width='4.5' height='6.5' rx='1.8'/>",
+    globe: "<circle cx='12' cy='12' r='8.5'/><path d='M3.5 12h17'/><path d='M12 3.5c2.4 2.3 3.6 5.1 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.1-3.6-8.5s1.2-6.2 3.6-8.5z'/>",
+    terminal: "<rect x='3.5' y='4.5' width='17' height='15' rx='3'/><path d='M7.5 10l3 2.5-3 2.5M12.5 15.5h4'/>",
     notes: "<rect x='5' y='3.5' width='14' height='17' rx='2.5'/><path d='M8.5 8.5h7M8.5 12h7M8.5 15.5h4.5'/>",
     power: "<path d='M12 3.5v8'/><path d='M6.6 6.8a7.5 7.5 0 1 0 10.8 0'/>",
     arrowRight: "<path d='M5 12h14M13.5 6.5L19 12l-5.5 5.5'/>",

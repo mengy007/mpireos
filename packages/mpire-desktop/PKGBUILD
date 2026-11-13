@@ -1,0 +1,27 @@
+# Maintainer: MpireOS contributors
+# Mpire Desktop: the shell (desktop, top bar, dock), the login screen, and the
+# shared MpireOS.Style QML module. Built from desktop/ in this repository:
+# scripts/build-packages.sh copies it next to this PKGBUILD.
+pkgname=mpire-desktop
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Mpire Desktop: the MpireOS shell and login screen"
+arch=('x86_64')
+url="https://github.com/mengy007/mpireos"
+license=('GPL-3.0-or-later')
+depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-wayland' 'layer-shell-qt' 'inter-font'
+         'sddm' 'kwin' 'plasma-workspace' 'krunner')
+makedepends=('cmake' 'ninja' 'qt6-base' 'qt6-declarative' 'layer-shell-qt')
+backup=('etc/sddm.conf.d/30-mpire-theme.conf')
+
+build() {
+    cmake -S "$startdir/desktop" -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DMPIRE_SHELL_RUN_FROM_SOURCE=OFF
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}

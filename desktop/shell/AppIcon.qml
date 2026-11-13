@@ -11,6 +11,8 @@ Item {
     property color glyphColor: Theme.textSecondary
     property real size: 52
     property bool running: false
+    property string command: ""          // what the dock runs when this is clicked
+    signal clicked()
     property bool hovered: area.containsMouse
     default property alias overlay: face.data
 
@@ -52,5 +54,5 @@ Item {
         width: 4; height: 4; radius: 2
         color: Theme.accent
     }
-    MouseArea { id: area; anchors.fill: parent; hoverEnabled: true }
+    MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; onClicked: root.clicked() }
 }

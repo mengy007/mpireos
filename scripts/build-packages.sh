@@ -18,6 +18,7 @@ mkdir -p "$work" "$out"
 cp -a "$repo/packages/." "$work/"
 # Packages built from this repository's sources get a copy of them.
 cp -a "$repo/installer" "$work/mpire-setup/installer"
+cp -a "$repo/desktop" "$work/mpire-desktop/desktop"
 tr -d '[:space:]' < "$repo/channels/$channel" > "$work/mpire-base/snapshot"
 chown -R builder: "$work"
 
@@ -31,11 +32,11 @@ else
     echo "==> MPIRE_SIGNING_KEY not set: building unsigned packages"
 fi
 
-# makepkg runs with --nodeps as an unprivileged user, so install every package's
-# build and runtime dependencies up front.
+# makepkg runs with --nodeps as an unprivileged user, so install what the
+# packages need to build up front (makedepends lists build-time libraries too).
 deps=()
 for pkgbuild in "$work"/*/PKGBUILD; do
-    mapfile -t -O "${#deps[@]}" deps < <(bash -c 'source "$1"; printf "%s\n" "${depends[@]}" "${makedepends[@]}"' _ "$pkgbuild")
+    mapfile -t -O "${#deps[@]}" deps < <(bash -c 'source "$1"; printf "%s\n" "${makedepends[@]}"' _ "$pkgbuild")
 done
 mapfile -t deps < <(printf '%s\n' "${deps[@]}" | grep -v -e '^mpire-' -e '^$' | sort -u)
 [[ ${#deps[@]} -gt 0 ]] && pacman -S --noconfirm --needed "${deps[@]}" >/dev/null

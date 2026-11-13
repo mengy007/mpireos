@@ -66,7 +66,10 @@ os-prober
 mpire-base
 mpire-keyring
 mpire-setup
+mpire-desktop
 inter-font
+layer-shell-qt
+qt6-svg
 
 # Base tools
 sudo

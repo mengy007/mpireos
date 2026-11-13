@@ -1,18 +1,31 @@
 #!/bin/bash
 # Reports whether the graphical session came up, for CI boot tests.
-#   Live ISO:         waits for the live user's Plasma shell  -> MPIREOS_DESKTOP_OK
+#   Live ISO:         waits for Mpire Desktop's shell         -> MPIREOS_DESKTOP_OK
 #                     then for Mpire Setup to open by itself  -> MPIREOS_SETUP_OK
 #                     (skipped for unattended installs)
-#   Installed system: waits for the SDDM login screen         -> MPIREOS_GREETER_OK
+#   Installed system: waits for the MpireOS login screen      -> MPIREOS_GREETER_OK
+#                     (MPIREOS_GREETER_FAIL if its theme has QML errors)
 # Markers go to the kernel log and the serial console; scripts/smoke-test.sh reads them.
 report() {
     echo "<2>$1" > /dev/kmsg 2>/dev/null || true
     [ -w /dev/ttyS0 ] && echo "$1" > /dev/ttyS0 2>/dev/null || true
 }
+# The MpireOS login screen logs its QML errors to the journal; any error means
+# SDDM may be showing its fallback theme instead.
+greeter_errors() {
+    journalctl -b --no-pager 2>/dev/null | grep -a -i 'sddm/themes/mpireos' | grep -a -i -e error -e 'is not' -e 'not installed' -e 'not found'
+}
 if id live &>/dev/null; then
-    ok="MPIREOS_DESKTOP_OK"; check() { pgrep -u live -x plasmashell >/dev/null; }
+    # Mpire Desktop's shell, running in place of plasmashell, for 20 seconds straight.
+    alive=0
+    check() {
+        if pgrep -u live -x mpire-shell >/dev/null; then alive=$((alive + 1)); else alive=0; fi
+        [ $alive -ge 20 ]
+    }
+    ok="MPIREOS_DESKTOP_OK"
 else
-    ok="MPIREOS_GREETER_OK"; check() { pgrep -f sddm-greeter >/dev/null; }
+    check() { pgrep -f sddm-greeter >/dev/null && sleep 10 && pgrep -f sddm-greeter >/dev/null; }
+    ok="MPIREOS_GREETER_OK"
 fi
 setup_check() {
     id live &>/dev/null || return 0
@@ -35,9 +48,21 @@ setup_log() {
     tail -n 40 /tmp/mpire-setup.log | while read -r line; do report "MPIREOS_SETUP_LOG $line"; done
 }
 for _ in $(seq 1 240); do
-    if check; then report "$ok"; setup_check; exit $?; fi
+    if check; then
+        if ! id live &>/dev/null && [ -n "$(greeter_errors)" ]; then
+            report "MPIREOS_GREETER_FAIL"
+            greeter_errors | tail -n 20 | while read -r line; do report "MPIREOS_GREETER_LOG $line"; done
+            exit 1
+        fi
+        report "$ok"
+        setup_check; exit $?
+    fi
     sleep 1
 done
+if id live &>/dev/null; then
+    journalctl -b _UID="$(id -u live)" --no-pager 2>/dev/null | grep -a -i -e mpire-shell -e 'qml' | tail -n 30 \
+        | while read -r line; do report "MPIREOS_SHELL_LOG $line"; done
+fi
 report "MPIREOS_DESKTOP_FAIL"
 systemctl --failed --no-legend --plain 2>/dev/null | while read -r line; do report "MPIREOS_FAILED_UNIT $line"; done
 journalctl -b -u display-manager --no-pager -n 30 2>/dev/null | while read -r line; do report "MPIREOS_SDDM $line"; done

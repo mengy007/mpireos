@@ -8,8 +8,8 @@ pkgdesc="Mpire Setup: the guided graphical installer for MpireOS"
 arch=('x86_64')
 url="https://github.com/mengy007/mpireos"
 license=('GPL-3.0-or-later')
-depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'inter-font' 'sudo' 'util-linux')
-makedepends=('cmake' 'ninja')
+depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-wayland' 'inter-font' 'sudo' 'util-linux')
+makedepends=('cmake' 'ninja' 'qt6-base' 'qt6-declarative')
 
 build() {
     cmake -S "$startdir/installer" -B build -G Ninja \

@@ -181,7 +181,7 @@ ApplicationWindow {
                     onClicked: {
                         if (window.index === 3) { window.go(4); Installer.start() }
                         else if (window.index === 4) window.go(3)        // after a failed install
-                        else if (window.index === 5) Installer.restart()
+                        else if (window.index === 5) window.page.requestRestart()
                         else window.go(window.index + 1)
                     }
                 }
