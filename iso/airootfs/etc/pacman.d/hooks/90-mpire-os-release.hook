@@ -1,0 +1,11 @@
+# Keep MpireOS identity when the "filesystem" package installs or upgrades.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = filesystem
+
+[Action]
+Description = Applying MpireOS os-release...
+When = PostTransaction
+Exec = /usr/local/bin/mpire-os-release

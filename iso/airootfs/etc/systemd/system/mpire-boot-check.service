@@ -1,0 +1,10 @@
+[Unit]
+Description=Report whether the MpireOS desktop started (used by the CI boot test)
+After=display-manager.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/mpire-boot-check
+
+[Install]
+WantedBy=graphical.target

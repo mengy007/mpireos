@@ -1,0 +1,14 @@
+#!/bin/sh
+# Writes MpireOS's os-release. Run by a pacman hook after "filesystem" changes.
+cat > /usr/lib/os-release <<'OSR'
+NAME="MpireOS"
+PRETTY_NAME="MpireOS"
+ID=mpireos
+ID_LIKE=arch
+BUILD_ID=rolling
+ANSI_COLOR="38;2;23;147;209"
+HOME_URL="https://github.com/mengy007/mpireos"
+DOCUMENTATION_URL="https://github.com/mengy007/mpireos/tree/main/docs"
+BUG_REPORT_URL="https://github.com/mengy007/mpireos/issues"
+LOGO=mpireos
+OSR

@@ -1,0 +1,8 @@
+#!/bin/bash
+# Creates the passwordless "live" user for the MpireOS live session.
+# Live ISO only: the installer must not carry this into an installed system.
+set -euo pipefail
+if ! id live &>/dev/null; then
+    useradd -m -G wheel,audio,video,network -s /bin/bash -c "MpireOS Live" live
+fi
+passwd -d live

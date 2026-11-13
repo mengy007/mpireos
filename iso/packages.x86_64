@@ -1,0 +1,55 @@
+# MpireOS packages, added on top of Arch's releng package list.
+
+# Desktop: KDE Plasma 6 on Wayland
+plasma-desktop
+plasma-nm
+plasma-pa
+plasma-systemmonitor
+powerdevil
+kscreen
+bluedevil
+kinfocenter
+systemsettings
+kde-gtk-config
+breeze-gtk
+xdg-desktop-portal-kde
+kwallet-pam
+ksshaskpass
+sddm
+sddm-kcm
+
+# Core apps
+konsole
+dolphin
+kate
+ark
+spectacle
+gwenview
+okular
+firefox
+discover
+flatpak
+
+# Audio, network, fonts
+pipewire
+pipewire-pulse
+pipewire-alsa
+wireplumber
+networkmanager
+noto-fonts
+noto-fonts-emoji
+
+# Graphics
+mesa
+vulkan-radeon
+vulkan-intel
+
+# Rollback (configured by the installer)
+btrfs-progs
+snapper
+snap-pac
+grub-btrfs
+inotify-tools
+
+# Base tools
+sudo
