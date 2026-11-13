@@ -1,0 +1,23 @@
+#!/bin/bash
+# CI only: install MpireOS unattended from the plan named by mpire.autoinstall=<path>
+# (default: the bundled CI plan), report to the serial console, then power off.
+plan=/usr/share/mpire-setup/ci-plan.json
+for arg in $(cat /proc/cmdline); do
+    case "$arg" in mpire.autoinstall=?*) plan="${arg#mpire.autoinstall=}" ;; esac
+done
+serial() { [ -w /dev/ttyS0 ] && echo "$1" > /dev/ttyS0; echo "$1"; }
+serial "MPIREOS_INSTALL_START $plan"
+: > /tmp/mpire-install.out
+/usr/local/bin/mpire-install --plan "$plan" > /tmp/mpire-install.out 2>&1 &
+pid=$!
+tail --pid=$pid -n +1 -f /tmp/mpire-install.out | grep --line-buffered -v '"substep"' \
+    | while read -r line; do serial "MPIREOS_INSTALL $line"; done
+wait $pid
+if [ $? -eq 0 ]; then
+    serial "MPIREOS_INSTALL_OK"
+else
+    serial "MPIREOS_INSTALL_FAIL"
+    tail -n 40 /var/log/mpire-install.log | while read -r line; do serial "MPIREOS_LOG $line"; done
+fi
+sync
+systemctl poweroff

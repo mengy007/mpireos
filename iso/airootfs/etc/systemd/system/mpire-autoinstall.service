@@ -1,0 +1,12 @@
+[Unit]
+Description=Unattended MpireOS install (CI only; needs mpire.autoinstall on the kernel command line)
+ConditionKernelCommandLine=mpire.autoinstall
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mpire-autoinstall
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target

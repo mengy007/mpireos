@@ -19,7 +19,7 @@ concurrency:
 jobs:
   iso:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +49,12 @@ jobs:
           sudo apt-get install -yq --no-install-recommends qemu-system-x86
           SERIAL_LOG=out/serial.log scripts/smoke-test.sh out/*.iso 1200
 
+      - name: Install test (UEFI, unattended install then boot)
+        run: |
+          sudo apt-get install -yq --no-install-recommends ovmf xorriso qemu-utils
+          INSTALL_LOG=out/install-serial.log BOOT_LOG=out/installed-serial.log \
+            scripts/install-test.sh out/*.iso 2400
+
       - name: Upload ISO
         if: always()
         uses: actions/upload-artifact@v4
@@ -57,6 +63,6 @@ jobs:
           path: |
             out/*.iso
             out/SHA256SUMS
-            out/serial.log
+            out/*serial.log
           retention-days: 7
           if-no-files-found: warn

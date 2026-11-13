@@ -1,0 +1,11 @@
+{
+  "disk": "/dev/vda",
+  "mode": "erase",
+  "encrypt": false,
+  "language": "en_US",
+  "keyboard": "us",
+  "timezone": "America/Los_Angeles",
+  "hostname": "mpireos-ci",
+  "user": {"fullName": "MpireOS CI", "name": "ci", "password": "mpireos-ci"},
+  "ci": true
+}

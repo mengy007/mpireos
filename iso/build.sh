@@ -29,14 +29,15 @@ cp -a "$releng" "$profile"
 
 # Arch's live-medium networking (iwd, systemd-networkd) and root autologin are
 # replaced by NetworkManager and a graphical live session.
-rm -f "$profile"/airootfs/etc/systemd/system/multi-user.target.wants/{iwd,systemd-networkd,systemd-resolved,reflector}.service \
+rm -f "$profile"/airootfs/etc/systemd/system/multi-user.target.wants/{iwd,systemd-networkd,reflector}.service \
       "$profile"/airootfs/etc/systemd/system/sockets.target.wants/systemd-networkd*.socket \
       "$profile"/airootfs/etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service \
       "$profile"/airootfs/etc/systemd/system/getty@tty1.service.d/autologin.conf
 rm -rf "$profile"/airootfs/etc/systemd/network
 
-# MpireOS files on top of releng's airootfs.
+# MpireOS files on top of releng's airootfs, plus the installer backend.
 cp -a "$repo/iso/airootfs/." "$profile/airootfs/"
+install -Dm755 "$repo/installer/backend/mpire-install" "$profile/airootfs/usr/local/bin/mpire-install"
 
 # Package list: releng's plus MpireOS's, deduplicated.
 cat "$releng/packages.x86_64" "$repo/iso/packages.x86_64" \
@@ -59,6 +60,8 @@ file_permissions+=(
   ["/usr/local/bin/mpire-live-setup"]="0:0:755"
   ["/usr/local/bin/mpire-boot-check"]="0:0:755"
   ["/usr/local/bin/mpire-os-release"]="0:0:755"
+  ["/usr/local/bin/mpire-install"]="0:0:755"
+  ["/usr/local/bin/mpire-autoinstall"]="0:0:755"
 )
 PERMS
 

@@ -1,0 +1,443 @@
+#!/usr/bin/env python3
+"""mpire-install: the privileged backend of Mpire Setup.
+
+Installs MpireOS from the running live ISO onto a disk, following an install
+plan written by the Mpire Setup frontend (or by CI for unattended tests).
+
+    mpire-install --plan plan.json [--dry-run]
+
+Progress is written to stdout as one JSON object per line:
+
+    {"event": "step", "index": 2, "total": 12, "title": "Copying MpireOS"}
+    {"event": "progress", "value": 0.42}
+    {"event": "done"}
+    {"event": "error", "message": "..."}
+
+Everything is also logged to /var/log/mpire-install.log, which is copied to
+the installed system. See docs/architecture.md, "Installer".
+
+Plan format (JSON):
+
+    {
+      "disk": "/dev/nvme0n1",          # whole disk to use
+      "mode": "erase",                 # "erase" (only mode supported so far)
+      "encrypt": false,
+      "language": "en_US",             # locale without encoding
+      "keyboard": "us",                # console keymap / XKB layout
+      "timezone": "America/Los_Angeles",
+      "hostname": "jordan-computer",
+      "user": {"fullName": "Jordan Lee", "name": "jordan", "password": "..."},
+      "ci": false                      # keep the CI boot-check service
+    }
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+LOG_PATH = Path("/var/log/mpire-install.log")
+TARGET = Path("/mnt/mpireos")
+LIVE_ROOT = Path("/run/archiso/airootfs")        # the ISO's root filesystem image
+LIVE_MEDIA = Path("/run/archiso/bootmnt")        # the mounted ISO
+KERNEL_ON_MEDIA = "arch/boot/x86_64/vmlinuz-linux"
+MAPPER_NAME = "mpireos-root"
+SUBVOLUMES = {                                   # subvolume -> mount point
+    "@": "/",
+    "@home": "/home",
+    "@snapshots": "/.snapshots",
+    "@var_log": "/var/log",
+    "@var_cache": "/var/cache",
+}
+BTRFS_OPTS = "noatime,compress=zstd:1,space_cache=v2"
+
+# Files and units that only make sense on the live ISO. Missing paths are fine.
+LIVE_ONLY_PATHS = [
+    "etc/sudoers.d/10-mpire-live",
+    "etc/sddm.conf.d/10-mpire-live.conf",
+    "etc/systemd/system/mpire-live-user.service",
+    "etc/systemd/system/multi-user.target.wants/mpire-live-user.service",
+    "usr/local/bin/mpire-live-setup",
+    "etc/mkinitcpio.conf.d/archiso.conf",
+    "etc/mkinitcpio.d/linux.preset",
+    "etc/systemd/system/getty@tty1.service.d",
+    "etc/systemd/system/etc-pacman.d-gnupg.mount",
+    "etc/systemd/system/pacman-init.service",
+    "etc/systemd/system/multi-user.target.wants/pacman-init.service",
+    "etc/systemd/system/choose-mirror.service",
+    "etc/systemd/system/multi-user.target.wants/choose-mirror.service",
+    "etc/systemd/system/livecd-talk.service",
+    "etc/systemd/system/multi-user.target.wants/livecd-talk.service",
+    "etc/systemd/system/livecd-alsa-unmuter.service",
+    "etc/systemd/system/sound.target.wants/livecd-alsa-unmuter.service",
+    "etc/systemd/system/multi-user.target.wants/sshd.service",
+    "etc/systemd/system/multi-user.target.wants/reflector.service",
+    "etc/systemd/system/multi-user.target.wants/vboxservice.service",
+    "etc/systemd/system/multi-user.target.wants/vmtoolsd.service",
+    "etc/systemd/system/multi-user.target.wants/vmware-vmblock-fuse.service",
+    "etc/systemd/system/multi-user.target.wants/hv_fcopy_daemon.service",
+    "etc/systemd/system/multi-user.target.wants/hv_kvp_daemon.service",
+    "etc/systemd/system/multi-user.target.wants/hv_vss_daemon.service",
+    "etc/systemd/system/cloud-init.target.wants",
+    "etc/systemd/journald.conf.d/volatile-storage.conf",
+    "etc/systemd/logind.conf.d/do-not-suspend.conf",
+    "etc/ssh/sshd_config.d/10-archiso.conf",
+    "etc/pacman.d/hooks/40-locale-gen.hook",
+    "etc/pacman.d/hooks/uncomment-mirrors.hook",
+    "etc/pacman.d/hooks/zzzz99-remove-custom-hooks-from-airootfs.hook",
+    "etc/xdg/reflector",
+    "root/.automated_script.sh",
+    "root/.zlogin",
+    "usr/local/bin/choose-mirror",
+    "usr/local/bin/Installation_guide",
+    "usr/local/bin/livecd-sound",
+    "usr/local/share/livecd-sound",
+    "etc/motd",
+]
+CI_ONLY_PATHS = [
+    "etc/systemd/system/mpire-boot-check.service",
+    "etc/systemd/system/graphical.target.wants/mpire-boot-check.service",
+    "usr/local/bin/mpire-boot-check",
+]
+LIVE_ONLY_PACKAGES = ["mkinitcpio-archiso", "archinstall", "clonezilla", "cloud-init"]
+
+
+class InstallError(Exception):
+    pass
+
+
+class Installer:
+    def __init__(self, plan: dict, dry_run: bool = False):
+        self.plan = plan
+        self.dry_run = dry_run
+        self.uefi = Path("/sys/firmware/efi").exists()
+        self.disk = plan["disk"]
+        self.encrypt = bool(plan.get("encrypt"))
+        self.boot_part = ""
+        self.root_part = ""
+        self.root_device = ""     # the device holding Btrfs (mapper if encrypted)
+        self.log = open(LOG_PATH, "a", buffering=1) if not dry_run else sys.stderr
+
+    # ---- output -------------------------------------------------------
+    def emit(self, **event):
+        print(json.dumps(event), flush=True)
+        self.log.write(f"# {json.dumps(event)}\n")
+
+    def run(self, *cmd: str, input: str | None = None, check: bool = True,
+            capture: bool = False, secret: bool = False) -> str:
+        shown = " ".join(shlex.quote(c) for c in cmd)
+        self.log.write(f"$ {shown}{'  # (input hidden)' if secret else ''}\n")
+        if self.dry_run:
+            return ""
+        result = subprocess.run(cmd, input=input, text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        if result.stdout and not secret:
+            self.log.write(result.stdout)
+        if check and result.returncode != 0:
+            tail = (result.stdout or "").strip().splitlines()[-5:]
+            raise InstallError(f"{cmd[0]} failed ({result.returncode}): " + " | ".join(tail))
+        return result.stdout if capture else ""
+
+    def chroot(self, *cmd: str, **kw) -> str:
+        return self.run("arch-chroot", str(TARGET), *cmd, **kw)
+
+    def write(self, rel: str, content: str, mode: int = 0o644):
+        path = TARGET / rel.lstrip("/")
+        self.log.write(f"write {path}\n")
+        if self.dry_run:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+        path.chmod(mode)
+
+    # ---- steps --------------------------------------------------------
+    def steps(self):
+        return [
+            ("Checking your computer", self.preflight),
+            ("Preparing your disk", self.partition),
+            ("Encrypting your disk", self.setup_encryption) if self.encrypt else None,
+            ("Creating file systems", self.make_filesystems),
+            ("Copying MpireOS", self.copy_system),
+            ("Removing live-only parts", self.remove_live_bits),
+            ("Setting language and time", self.configure_locale),
+            ("Setting up your account", self.create_user),
+            ("Preparing startup", self.build_initramfs),
+            ("Installing the boot loader", self.install_bootloader),
+            ("Setting up snapshots", self.setup_snapshots),
+            ("Finishing up", self.finish),
+        ]
+
+    def install(self):
+        steps = [s for s in self.steps() if s]
+        try:
+            for i, (title, fn) in enumerate(steps):
+                self.emit(event="step", index=i, total=len(steps), title=title)
+                fn()
+                self.emit(event="progress", value=round((i + 1) / len(steps), 3))
+            self.emit(event="done")
+        except Exception as exc:   # report every failure in the same format
+            self.emit(event="error", message=str(exc))
+            self.cleanup()
+            raise
+
+    def preflight(self):
+        if self.plan.get("mode", "erase") != "erase":
+            raise InstallError("Installing alongside another system is not supported yet.")
+        if not re.fullmatch(r"/dev/[a-z0-9]+", self.disk):
+            raise InstallError(f"Not a whole-disk device: {self.disk}")
+        user = self.plan["user"]
+        if not re.fullmatch(r"[a-z_][a-z0-9_-]{0,31}", user["name"]):
+            raise InstallError(f"Invalid username: {user['name']}")
+        if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9-]{0,62}", self.plan["hostname"]):
+            raise InstallError(f"Invalid computer name: {self.plan['hostname']}")
+        if self.dry_run:
+            return
+        if not Path(self.disk).is_block_device():
+            raise InstallError(f"Disk not found: {self.disk}")
+        if not (LIVE_ROOT / "usr").is_dir():
+            raise InstallError("This doesn't look like the MpireOS live system.")
+        # Nothing on the target disk may be in use.
+        mounted = self.run("lsblk", "-nro", "MOUNTPOINTS", self.disk, capture=True)
+        if any(m.strip() for m in mounted.splitlines()):
+            raise InstallError(f"{self.disk} is in use. Close anything using it and try again.")
+
+    def part(self, n: int) -> str:
+        sep = "p" if self.disk[-1].isdigit() else ""
+        return f"{self.disk}{sep}{n}"
+
+    def partition(self):
+        # GPT layout, the same for UEFI and BIOS so a disk can move between them:
+        #   1: 1 MiB BIOS boot (for GRUB on BIOS), 2: 1 GiB FAT32 /boot (ESP), 3: root
+        self.run("wipefs", "--all", "--force", self.disk)
+        self.run("sgdisk", "--zap-all", self.disk)
+        self.run("sgdisk",
+                 "-n1:0:+1M", "-t1:EF02", "-c1:BIOS boot",
+                 "-n2:0:+1G", "-t2:EF00", "-c2:MpireOS boot",
+                 "-n3:0:0", f"-t3:{'8309' if self.encrypt else '8304'}", "-c3:MpireOS",
+                 self.disk)
+        self.run("partprobe", self.disk, check=False)
+        self.run("udevadm", "settle")
+        self.boot_part = self.part(2)
+        self.root_part = self.part(3)
+        self.root_device = self.root_part
+
+    def setup_encryption(self):
+        password = self.plan.get("encryptionPassword") or self.plan["user"]["password"]
+        self.run("cryptsetup", "luksFormat", "--type", "luks2", "--batch-mode",
+                 "--label", "MpireOS", "--key-file", "-", self.root_part,
+                 input=password, secret=True)
+        self.run("cryptsetup", "open", "--key-file", "-", self.root_part, MAPPER_NAME,
+                 input=password, secret=True)
+        self.root_device = f"/dev/mapper/{MAPPER_NAME}"
+
+    def make_filesystems(self):
+        self.run("mkfs.fat", "-F", "32", "-n", "MPIREBOOT", self.boot_part)
+        self.run("mkfs.btrfs", "--force", "--label", "MpireOS", self.root_device)
+        if not self.dry_run:
+            TARGET.mkdir(parents=True, exist_ok=True)
+        self.run("mount", self.root_device, str(TARGET))
+        for sub in SUBVOLUMES:
+            self.run("btrfs", "subvolume", "create", str(TARGET / sub))
+        self.run("umount", str(TARGET))
+        for sub, mnt in SUBVOLUMES.items():   # "/" first: dict order
+            where = TARGET / mnt.lstrip("/")
+            if not self.dry_run:
+                where.mkdir(parents=True, exist_ok=True)
+            self.run("mount", "-o", f"{BTRFS_OPTS},subvol={sub}", self.root_device, str(where))
+        if not self.dry_run:
+            (TARGET / "boot").mkdir(exist_ok=True)
+        self.run("mount", self.boot_part, str(TARGET / "boot"))
+
+    def copy_system(self):
+        cmd = ["rsync", "-aAXH", "--info=progress2", "--no-inc-recursive",
+               "--exclude=/dev/*", "--exclude=/proc/*", "--exclude=/sys/*",
+               "--exclude=/run/*", "--exclude=/tmp/*", "--exclude=/mnt/*",
+               "--exclude=/boot/*", f"{LIVE_ROOT}/", f"{TARGET}/"]
+        self.log.write("$ " + " ".join(cmd) + "\n")
+        if not self.dry_run:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                    text=True, bufsize=1)
+            last = -1
+            for line in iter(lambda: proc.stdout.readline(), ""):
+                for chunk in line.split("\r"):
+                    m = re.search(r"\s(\d{1,3})%", chunk)
+                    if m and int(m.group(1)) != last:
+                        last = int(m.group(1))
+                        self.emit(event="substep", value=last / 100)
+            if proc.wait() != 0:
+                raise InstallError("Copying the system failed. See the install log.")
+        # The kernel lives on the ISO, not in the live root image.
+        kernel = LIVE_MEDIA / KERNEL_ON_MEDIA
+        self.run("install", "-m", "0644", str(kernel), str(TARGET / "boot/vmlinuz-linux"))
+        for ucode in ("intel-ucode.img", "amd-ucode.img"):
+            src = LIVE_MEDIA / "arch/boot" / ucode
+            if self.dry_run or src.exists():
+                self.run("install", "-m", "0644", str(src), str(TARGET / "boot" / ucode))
+
+    def remove_live_bits(self):
+        keep_ci = bool(self.plan.get("ci"))
+        for rel in LIVE_ONLY_PATHS + ([] if keep_ci else CI_ONLY_PATHS):
+            path = TARGET / rel
+            self.log.write(f"remove {path}\n")
+            if self.dry_run:
+                continue
+            if path.is_dir() and not path.is_symlink():
+                shutil.rmtree(path, ignore_errors=True)
+            elif path.exists() or path.is_symlink():
+                path.unlink()
+        installed = self.chroot("pacman", "-Qq", capture=True).split()
+        remove = [p for p in LIVE_ONLY_PACKAGES if p in installed]
+        if remove:
+            self.chroot("pacman", "-Rns", "--noconfirm", *remove, check=False)
+        # Fresh machine identity and pacman keyring.
+        self.write("etc/machine-id", "")
+        self.chroot("pacman-key", "--init")
+        self.chroot("pacman-key", "--populate", "archlinux")
+        self.chroot("passwd", "--lock", "root")
+
+    def configure_locale(self):
+        lang = self.plan.get("language", "en_US")
+        if not re.fullmatch(r"[a-z]{2,3}_[A-Z]{2}", lang):
+            raise InstallError(f"Unsupported language code: {lang}")
+        locales = {f"{lang}.UTF-8 UTF-8", "en_US.UTF-8 UTF-8"}
+        self.write("etc/locale.gen", "".join(f"{l}\n" for l in sorted(locales)))
+        self.chroot("locale-gen")
+        self.write("etc/locale.conf", f"LANG={lang}.UTF-8\n")
+        keyboard = self.plan.get("keyboard", "us")
+        self.write("etc/vconsole.conf", f"KEYMAP={keyboard}\n")
+        self.write("etc/X11/xorg.conf.d/00-keyboard.conf",
+                   'Section "InputClass"\n    Identifier "system-keyboard"\n'
+                   '    MatchIsKeyboard "on"\n'
+                   f'    Option "XkbLayout" "{keyboard}"\nEndSection\n')
+        tz = self.plan.get("timezone", "UTC")
+        if not (Path("/usr/share/zoneinfo") / tz).is_file() and not self.dry_run:
+            raise InstallError(f"Unknown time zone: {tz}")
+        self.chroot("ln", "-sf", f"/usr/share/zoneinfo/{tz}", "/etc/localtime")
+        self.chroot("hwclock", "--systohc", check=False)
+        host = self.plan["hostname"]
+        self.write("etc/hostname", f"{host}\n")
+        self.write("etc/hosts", f"127.0.0.1 localhost\n::1 localhost\n127.0.1.1 {host}\n")
+
+    def create_user(self):
+        user = self.plan["user"]
+        self.chroot("useradd", "--create-home", "--groups", "wheel",
+                    "--shell", "/bin/bash", "--comment", user.get("fullName", ""), user["name"])
+        self.chroot("chpasswd", input=f"{user['name']}:{user['password']}\n", secret=True)
+        self.write("etc/sudoers.d/10-mpire-wheel", "%wheel ALL=(ALL:ALL) ALL\n", mode=0o440)
+
+    def build_initramfs(self):
+        hooks = ["base", "systemd", "autodetect", "microcode", "modconf", "kms",
+                 "keyboard", "sd-vconsole", "block"]
+        if self.encrypt:
+            hooks.append("sd-encrypt")
+        hooks += ["filesystems", "fsck"]
+        self.write("etc/mkinitcpio.conf.d/mpireos.conf", f"HOOKS=({' '.join(hooks)})\n")
+        self.write("etc/mkinitcpio.d/linux.preset",
+                   'ALL_kver="/boot/vmlinuz-linux"\nPRESETS=(\'default\' \'fallback\')\n'
+                   'default_image="/boot/initramfs-linux.img"\n'
+                   'fallback_image="/boot/initramfs-linux-fallback.img"\n'
+                   'fallback_options="-S autodetect"\n')
+        self.run("sh", "-c", f"genfstab -U {shlex.quote(str(TARGET))} > {shlex.quote(str(TARGET / 'etc/fstab'))}")
+        self.chroot("mkinitcpio", "-P")
+
+    def uuid(self, device: str) -> str:
+        if self.dry_run:
+            return "UUID"
+        return self.run("blkid", "-s", "UUID", "-o", "value", device, capture=True).strip()
+
+    def install_bootloader(self):
+        params = [f"root=UUID={self.uuid(self.root_device)}", "rootflags=subvol=@", "rw",
+                  "quiet", "splash", "loglevel=3"]
+        if self.encrypt:
+            params.insert(0, f"rd.luks.name={self.uuid(self.root_part)}={MAPPER_NAME}")
+        if self.plan.get("ci"):
+            params += ["console=tty0", "console=ttyS0,115200"]
+        self.write("etc/default/grub",
+                   'GRUB_DEFAULT=0\nGRUB_TIMEOUT=3\nGRUB_TIMEOUT_STYLE=hidden\n'
+                   'GRUB_DISTRIBUTOR="MpireOS"\n'
+                   f'GRUB_CMDLINE_LINUX_DEFAULT="{" ".join(params)}"\n'
+                   'GRUB_CMDLINE_LINUX=""\nGRUB_DISABLE_OS_PROBER=false\n'
+                   'GRUB_GFXMODE=auto\nGRUB_GFXPAYLOAD_LINUX=keep\n')
+        if self.uefi:
+            self.chroot("grub-install", "--target=x86_64-efi", "--efi-directory=/boot",
+                        "--bootloader-id=MpireOS")
+            # Also install to the fallback path so firmware that forgets boot entries still boots.
+            self.chroot("grub-install", "--target=x86_64-efi", "--efi-directory=/boot",
+                        "--removable")
+        else:
+            self.chroot("grub-install", "--target=i386-pc", self.disk)
+        self.chroot("grub-mkconfig", "-o", "/boot/grub/grub.cfg")
+
+    def setup_snapshots(self):
+        # snapper wants to create /.snapshots itself; let it, then put @snapshots back.
+        self.run("umount", str(TARGET / ".snapshots"))
+        if not self.dry_run:
+            (TARGET / ".snapshots").rmdir()
+        self.chroot("snapper", "--no-dbus", "-c", "root", "create-config", "/")
+        self.chroot("btrfs", "subvolume", "delete", "/.snapshots")
+        if not self.dry_run:
+            (TARGET / ".snapshots").mkdir(mode=0o750)
+        self.run("mount", "-o", f"{BTRFS_OPTS},subvol=@snapshots", self.root_device,
+                 str(TARGET / ".snapshots"))
+        for key, value in {
+            "TIMELINE_CREATE": "no",
+            "NUMBER_LIMIT": "20",
+            "NUMBER_LIMIT_IMPORTANT": "10",
+            "ALLOW_GROUPS": "wheel",
+        }.items():
+            self.chroot("snapper", "--no-dbus", "-c", "root", "set-config", f"{key}={value}")
+        self.chroot("snapper", "--no-dbus", "-c", "root", "create",
+                    "--description", "Fresh install", "--userdata", "important=yes")
+
+    def finish(self):
+        for unit in ("NetworkManager.service", "systemd-resolved.service", "bluetooth.service",
+                     "fstrim.timer", "snapper-cleanup.timer", "grub-btrfsd.service",
+                     "sddm.service"):
+            self.chroot("systemctl", "enable", unit, check=False)
+        self.chroot("systemctl", "set-default", "graphical.target")
+        self.chroot("grub-mkconfig", "-o", "/boot/grub/grub.cfg")
+        if not self.dry_run and LOG_PATH.exists():
+            self.log.flush()
+            shutil.copy(LOG_PATH, TARGET / "var/log/mpire-install.log")
+        self.cleanup()
+
+    def cleanup(self):
+        if self.dry_run:
+            return
+        subprocess.run(["sync"])
+        subprocess.run(["umount", "--recursive", str(TARGET)], stderr=subprocess.DEVNULL)
+        if self.encrypt:
+            subprocess.run(["cryptsetup", "close", MAPPER_NAME], stderr=subprocess.DEVNULL)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--plan", required=True, type=Path, help="install plan (JSON)")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="print the steps and commands without changing anything")
+    args = parser.parse_args()
+
+    if not args.dry_run and os.geteuid() != 0:
+        print(json.dumps({"event": "error", "message": "mpire-install must run as root"}))
+        return 1
+    plan = json.loads(args.plan.read_text())
+    started = time.time()
+    try:
+        Installer(plan, dry_run=args.dry_run).install()
+    except Exception:
+        return 1
+    if not args.dry_run:
+        with open(LOG_PATH, "a") as log:
+            log.write(f"# finished in {time.time() - started:.0f}s\n")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

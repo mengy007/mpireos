@@ -1,15 +1,19 @@
 #!/bin/bash
-# Waits for the live user's Plasma shell, then writes a marker to the kernel
-# log and the serial console. scripts/smoke-test.sh looks for these markers.
+# Reports whether the graphical session came up, for CI boot tests.
+#   Live ISO:         waits for the live user's Plasma shell -> MPIREOS_DESKTOP_OK
+#   Installed system: waits for the SDDM login screen        -> MPIREOS_GREETER_OK
+# Markers go to the kernel log and the serial console; scripts/smoke-test.sh reads them.
 report() {
     echo "<2>$1" > /dev/kmsg 2>/dev/null || true
     [ -w /dev/ttyS0 ] && echo "$1" > /dev/ttyS0 2>/dev/null || true
 }
+if id live &>/dev/null; then
+    ok="MPIREOS_DESKTOP_OK"; check() { pgrep -u live -x plasmashell >/dev/null; }
+else
+    ok="MPIREOS_GREETER_OK"; check() { pgrep -f sddm-greeter >/dev/null; }
+fi
 for _ in $(seq 1 240); do
-    if pgrep -u live -x plasmashell >/dev/null; then
-        report "MPIREOS_DESKTOP_OK"
-        exit 0
-    fi
+    if check; then report "$ok"; exit 0; fi
     sleep 1
 done
 report "MPIREOS_DESKTOP_FAIL"
