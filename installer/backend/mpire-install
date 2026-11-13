@@ -299,7 +299,7 @@ class Installer:
         # Fresh machine identity and pacman keyring.
         self.write("etc/machine-id", "")
         self.chroot("pacman-key", "--init")
-        self.chroot("pacman-key", "--populate", "archlinux")
+        self.chroot("pacman-key", "--populate")
         self.chroot("passwd", "--lock", "root")
 
     def configure_locale(self):
@@ -399,7 +399,7 @@ class Installer:
     def finish(self):
         for unit in ("NetworkManager.service", "systemd-resolved.service", "bluetooth.service",
                      "fstrim.timer", "snapper-cleanup.timer", "grub-btrfsd.service",
-                     "sddm.service"):
+                     "sddm.service", "mpire-update.timer"):
             self.chroot("systemctl", "enable", unit, check=False)
         self.chroot("systemctl", "set-default", "graphical.target")
         self.chroot("grub-mkconfig", "-o", "/boot/grub/grub.cfg")

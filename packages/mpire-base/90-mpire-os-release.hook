@@ -8,4 +8,4 @@ Target = filesystem
 [Action]
 Description = Applying MpireOS os-release...
 When = PostTransaction
-Exec = /usr/local/bin/mpire-os-release
+Exec = /usr/lib/mpireos/mpire-os-release

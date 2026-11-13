@@ -43,9 +43,16 @@ install -Dm755 "$repo/installer/backend/mpire-install" "$profile/airootfs/usr/lo
 cat "$releng/packages.x86_64" "$repo/iso/packages.x86_64" \
     | sed 's/#.*//; s/[[:space:]]//g; /^$/d' | sort -u > "$profile/packages.x86_64"
 
-# Pacman config pinned to the channel's snapshot, for the build and the live system.
-sed "s|@SNAPSHOT@|$snapshot|g" "$repo/iso/pacman.conf.in" > "$profile/pacman.conf"
-cp "$profile/pacman.conf" "$profile/airootfs/etc/pacman.conf"
+# Pacman config. The live and installed system get the real one (pacman.conf.in);
+# the build uses the same layout with the channel's snapshot and the [mpire]
+# packages just built by scripts/build-packages.sh.
+mpire_repo="$(realpath -m "${MPIRE_REPO_DIR:-$out/repo}")"
+[[ -f $mpire_repo/mpire.db ]] || { echo "no [mpire] repo at $mpire_repo; run scripts/build-packages.sh first" >&2; exit 1; }
+cp "$repo/iso/pacman.conf.in" "$profile/airootfs/etc/pacman.conf"
+mirror="Server = https://archive.archlinux.org/repos/$snapshot/\$repo/os/\$arch"
+sed -e "/^\[mpire\]/,/^\[core\]/{s|^SigLevel = .*|SigLevel = Optional TrustAll|;s|^Server = .*|Server = file://$mpire_repo|}" \
+    -e "s|^Include = /etc/pacman.d/mpire-snapshot|$mirror|" \
+    "$repo/iso/pacman.conf.in" > "$profile/pacman.conf"
 
 # Identity and file permissions.
 sed -i \
@@ -59,7 +66,6 @@ file_permissions+=(
   ["/etc/sudoers.d/10-mpire-live"]="0:0:440"
   ["/usr/local/bin/mpire-live-setup"]="0:0:755"
   ["/usr/local/bin/mpire-boot-check"]="0:0:755"
-  ["/usr/local/bin/mpire-os-release"]="0:0:755"
   ["/usr/local/bin/mpire-install"]="0:0:755"
   ["/usr/local/bin/mpire-autoinstall"]="0:0:755"
 )

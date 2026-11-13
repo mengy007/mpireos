@@ -1,0 +1,10 @@
+post_upgrade() {
+    # Nothing to import until the project signing key exists.
+    [ -s usr/share/pacman/keyrings/mpireos.gpg ] || return 0
+    if usr/bin/pacman-key -l >/dev/null 2>&1; then
+        usr/bin/pacman-key --populate mpireos
+    fi
+}
+post_install() {
+    post_upgrade
+}
