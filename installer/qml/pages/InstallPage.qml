@@ -63,8 +63,8 @@ SetupPage {
                 radius: 3
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
-                    GradientStop { position: 0; color: Theme.accent }
-                    GradientStop { position: 1; color: Theme.lavender }
+                    GradientStop { position: 0; color: Theme.accentHover }
+                    GradientStop { position: 1; color: Theme.accentDeep }
                 }
                 Behavior on width { NumberAnimation { duration: 200 } }
             }

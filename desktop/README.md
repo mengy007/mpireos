@@ -37,4 +37,4 @@ python3 desktop/tools/preview.py shell-dock --size 600x72
 |---|---|
 | ![Desktop](docs/screenshots/desktop.png) | ![Login](docs/screenshots/login.png) |
 
-The offscreen renderer used for these screenshots does not draw drop shadows; on real hardware cards, the dock, and the login card have soft violet shadows.
+The offscreen renderer used for these screenshots does not draw drop shadows; on real hardware cards, the dock, and the login card have soft teal-tinted shadows.

@@ -1,0 +1,21 @@
+# MpireOS defaults for KDE and Qt apps (system-wide; users can still change them).
+[General]
+ColorScheme=MpireOS
+font=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+menuFont=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+smallestReadableFont=Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+toolBarFont=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+fixed=Hack,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+AccentColor=38,156,161
+
+[KDE]
+LookAndFeelPackage=org.mpireos.desktop
+widgetStyle=Breeze
+SingleClick=false
+AnimationDurationFactor=0.8
+
+[Icons]
+Theme=breeze
+
+[WM]
+activeFont=Inter,10,-1,5,600,0,0,0,0,0,0,0,0,0,0,1

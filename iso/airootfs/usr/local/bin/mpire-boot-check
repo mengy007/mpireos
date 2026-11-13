@@ -43,6 +43,25 @@ setup_check() {
         | while read -r line; do report "MPIREOS_SETUP_LOG $line"; done
     return 1
 }
+# CI only (QEMU started with -fw_cfg name=opt/mpireos/ci): once the test has
+# closed the installer, open an app window so its title bar and colors show up
+# in the test's screenshot.
+ci_open_app() {
+    [ -e /sys/firmware/qemu_fw_cfg/by_name/opt/mpireos/ci/raw ] || return 0
+    id live &>/dev/null || return 0
+    sleep 30
+    # Start it with the desktop shell's own environment, so it reaches the same
+    # Wayland display and session bus.
+    local shell_pid; shell_pid="$(pgrep -u live -x mpire-shell | head -n 1)"
+    local -a shell_env=()
+    [ -n "$shell_pid" ] && mapfile -d '' shell_env < "/proc/$shell_pid/environ"
+    runuser -u live -- env -i "${shell_env[@]}" systemsettings >/tmp/ci-app.log 2>&1 &
+    sleep 15
+    if pgrep -u live -x systemsettings >/dev/null; then report "MPIREOS_APP_RUNNING"; else report "MPIREOS_APP_EXITED"; fi
+    report "MPIREOS_APP_LOG env: $(printf '%s\n' "${shell_env[@]}" | grep -a -e '^WAYLAND_DISPLAY=' -e '^QT_QPA_PLATFORM=' | tr '\n' ' ')"
+    tail -n 15 /tmp/ci-app.log 2>/dev/null | while read -r line; do report "MPIREOS_APP_LOG $line"; done
+    report "MPIREOS_APP_OPENED"
+}
 setup_log() {
     [ -f /tmp/mpire-setup.log ] || { report "MPIREOS_SETUP_LOG (no output)"; return; }
     tail -n 40 /tmp/mpire-setup.log | while read -r line; do report "MPIREOS_SETUP_LOG $line"; done
@@ -55,7 +74,9 @@ for _ in $(seq 1 240); do
             exit 1
         fi
         report "$ok"
-        setup_check; exit $?
+        setup_check || exit 1
+        ci_open_app
+        exit 0
     fi
     sleep 1
 done

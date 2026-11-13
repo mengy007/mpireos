@@ -1,6 +1,6 @@
 import QtQuick
 
-// The MpireOS desktop backdrop: pale lavender with broad, soft light sweeps.
+// The MpireOS desktop backdrop: pale teal-gray with broad, soft light sweeps.
 Item {
     id: root
     clip: true

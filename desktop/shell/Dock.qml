@@ -30,8 +30,8 @@ Item {
             glyph: ""
             ColumnLayoutCal { anchors.centerIn: parent; now: dock.now }
         }
-        AppIcon { glyph: "image"; topColor: "#DCCDF3"; bottomColor: "#B6A1E4"; glyphColor: "#6A55C4"; command: "gwenview"; onClicked: dock.launch(command) }
-        AppIcon { glyph: "terminal"; topColor: "#D9D4E6"; bottomColor: "#A9A1C0"; glyphColor: "white"; command: "konsole"; onClicked: dock.launch(command) }
+        AppIcon { glyph: "image"; topColor: "#DCCDF3"; bottomColor: "#B6A1E4"; glyphColor: "#5E4BB8"; command: "gwenview"; onClicked: dock.launch(command) }
+        AppIcon { glyph: "terminal"; topColor: "#5B7C86"; bottomColor: "#0B3A44"; glyphColor: "white"; command: "konsole"; onClicked: dock.launch(command) }
         Divider {}
         AppIcon { glyph: "settings"; topColor: "#DDE2EA"; bottomColor: "#B9C2D0"; glyphColor: "#5A6475"; command: "systemsettings"; onClicked: dock.launch(command) }
     }

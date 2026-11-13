@@ -103,7 +103,7 @@ SetupPage {
                 onToggled: Installer.encrypt = checked
                 indicator: Rectangle {
                     implicitWidth: 44; implicitHeight: 26; radius: 13
-                    color: encryptSwitch.checked ? Theme.accent : "#D5D2DE"
+                    color: encryptSwitch.checked ? Theme.accent : Theme.controlOff
                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
                     Rectangle {
                         width: 20; height: 20; radius: 10; y: 3

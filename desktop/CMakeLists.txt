@@ -32,3 +32,9 @@ install(DIRECTORY greeter/ DESTINATION ${CMAKE_INSTALL_DATADIR}/sddm/themes/mpir
 install(FILES session/mpire-shell.conf
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/systemd/user/plasma-plasmashell.service.d)
 install(FILES session/30-mpire-theme.conf DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/sddm.conf.d)
+# Interim: MpireOS's look for the KDE pieces still in use (KWin title bars,
+# KDE and Qt apps), until our own components replace them.
+install(FILES kde/MpireOS.colors DESTINATION ${CMAKE_INSTALL_DATADIR}/color-schemes)
+install(FILES kde/kdeglobals kde/kwinrc kde/breezerc kde/ksplashrc kde/kcminputrc kde/krunnerrc
+        DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg)
+install(DIRECTORY kde/lookandfeel/ DESTINATION ${CMAKE_INSTALL_DATADIR}/plasma/look-and-feel/org.mpireos.desktop)

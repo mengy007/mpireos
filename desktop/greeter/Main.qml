@@ -100,8 +100,8 @@ Item {
                     Layout.preferredWidth: 64; Layout.preferredHeight: 64
                     radius: 32
                     gradient: Gradient {
-                        GradientStop { position: 0; color: "#C9BDF0" }
-                        GradientStop { position: 1; color: "#9C88E0" }
+                        GradientStop { position: 0; color: "#8FD0D3" }
+                        GradientStop { position: 1; color: Theme.accent }
                     }
                     Text {
                         anchors.centerIn: parent
@@ -145,7 +145,7 @@ Item {
                         id: go
                         anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 5 }
                         width: 34; height: 34; radius: 17
-                        color: password.text.length > 0 ? Theme.accent : "#D5D2DE"
+                        color: password.text.length > 0 ? Theme.accent : Theme.controlOff
                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
                         Icon { anchors.centerIn: parent; name: "arrowRight"; size: 16; color: "white"; weight: 2 }
                         MouseArea { anchors.fill: parent; onClicked: root.login() }

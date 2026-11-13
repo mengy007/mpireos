@@ -4,13 +4,13 @@ Status: draft, v0.1. This is the visual and verbal language for everything Mpire
 
 ## The feeling
 
-**Calm, light, and personal.** MpireOS should feel like a tidy desk in soft daylight: airy space, gentle lavender light, rounded shapes, and quiet confidence. Nothing shouts. Color is used sparingly and warmly, mostly to tell things apart (folders, collections, app icons) and to mark the one action that matters on a screen.
+**Calm, light, and personal.** MpireOS should feel like a tidy desk in soft daylight: airy space, gentle cool daylight, rounded shapes, and quiet confidence. Nothing shouts. Color is used sparingly and warmly, mostly to tell things apart (folders, collections, app icons) and to mark the one action that matters on a screen.
 
 Five principles:
 
 1. **Space first.** Generous margins and padding. When a screen feels busy, remove something before shrinking anything.
-2. **Soft, not flat.** White surfaces float on a pale lavender backdrop with large radii and diffuse, low-contrast shadows. No hard borders where a shadow or a tint will do.
-3. **One accent.** A single violet accent marks selection, focus, and the primary action. Everything else is neutral or a muted pastel.
+2. **Soft, not flat.** White surfaces float on a pale teal-gray backdrop with large radii and diffuse, low-contrast shadows. No hard borders where a shadow or a tint will do.
+3. **One accent.** A single teal accent marks selection, focus, and the primary action. Everything else is neutral or a muted pastel.
 4. **Big, light numbers; small, quiet labels.** Dates, times, and timers are large and light-weight. Section labels are small capitals with wide tracking.
 5. **Warm words.** Copy is short, human, and kind ("A little space for everything.", "One thing at a time."). Never cute at the expense of clarity.
 
@@ -22,28 +22,30 @@ Light is the default theme. Dark is a full theme, not an inversion (see below).
 
 | Token | Value | Use |
 |---|---|---|
-| `backdrop` | `#E6E3EC` | Desktop background behind everything; carries the soft wallpaper swirl |
-| `backdropHighlight` | `#F3F1F7` | Light side of the backdrop gradient |
-| `chrome` | `#F6F5FA` at 80% with blur | Top bar and dock: frosted glass over the backdrop |
-| `surface` | `#FDFDFF` | Windows, cards, widgets |
-| `surfaceSunken` | `#F4F4F7` | Sidebars, inset areas, input fields |
-| `surfaceHover` | `#F6F4FB` | Hovered rows and items |
-| `selection` | `#EFEBFC` | Selected sidebar item, selected row |
-| `divider` | `#ECEBF0` | Hairlines between rows and sections |
-| `border` | `#E6E5EB` | Card outlines, only where a shadow alone isn't enough |
-| `text` | `#24222E` | Primary text |
-| `textSecondary` | `#6B6878` | Descriptions, metadata |
-| `textTertiary` | `#A19EAE` | Placeholders, disabled text, overlines |
+| `backdrop` | `#E4EDEF` | Desktop background behind everything; carries the soft wallpaper swirl |
+| `backdropHighlight` | `#F4F8F9` | Light side of the backdrop gradient |
+| `chrome` | `#F7F9FB` at 80% with blur | Top bar and dock: frosted glass over the backdrop |
+| `surface` | `#FFFFFF` | Windows, cards, widgets |
+| `surfaceSunken` | `#F7F9FB` | Sidebars, inset areas, input fields |
+| `surfaceHover` | `#F1F7F8` | Hovered rows and items |
+| `selection` | `#EBF6F7` | Selected sidebar item, selected row |
+| `divider` | `#EDF0F3` | Hairlines between rows and sections |
+| `border` | `#E6EAEF` | Card outlines, only where a shadow alone isn't enough |
+| `text` | `#0B1F25` | Primary text |
+| `textSecondary` | `#4F5D6B` | Descriptions, metadata |
+| `textTertiary` | `#8B95A3` | Placeholders, disabled text, overlines |
 
 ### Accent
 
+Taken from mpire-tech.com (November 2026): Mpire teal `#269CA1` fading to deep teal `#094551` on primary buttons and the logo mark, ink `#0B1F25` for text.
+
 | Token | Value | Use |
 |---|---|---|
-| `accent` | `#7C66D6` | Primary buttons, selection marker, focus ring, today in the calendar |
-| `accentHover` | `#8C78DE` | Hover on accent elements |
-| `accentPressed` | `#6A55C4` | Pressed |
-| `accentSoft` | `#EFEBFC` | Tinted backgrounds for selected and accent-related items |
-| `accentText` | `#5E4BB8` | Accent-colored text and links on light surfaces |
+| `accent` | `#269CA1` | Primary buttons, selection marker, focus ring, today in the calendar |
+| `accentHover` | `#2FAAAF` | Hover on accent elements |
+| `accentPressed` | `#1A7F86` | Pressed |
+| `accentSoft` | `#EBF6F7` | Tinted backgrounds for selected and accent-related items |
+| `accentText` | `#094551` | Accent-colored text and links on light surfaces |
 
 ### Pastels
 
@@ -104,7 +106,7 @@ Interface text is sentence case. Overlines are the only all-caps style.
 
 ## Elevation
 
-Shadows are large, soft, and tinted toward violet, never black.
+Shadows are large, soft, and tinted toward deep teal, never black.
 
 | Level | Shadow | Use |
 |---|---|---|

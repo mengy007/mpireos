@@ -1,7 +1,7 @@
 # Maintainer: MpireOS contributors
 pkgname=mpire-base
 pkgver=0.1.0
-pkgrel=1
+pkgrel=2
 pkgdesc="MpireOS identity, defaults, and automatic updates"
 arch=('any')
 url="https://github.com/mengy007/mpireos"
@@ -9,12 +9,12 @@ license=('GPL-3.0-or-later')
 depends=('pacman' 'curl' 'sudo' 'snapper' 'snap-pac' 'grub-btrfs' 'mpire-keyring')
 optdepends=('flatpak: update Flatpak apps too')
 backup=('etc/mpireos/update.conf' 'etc/pacman.d/mpire-snapshot'
-        'etc/sddm.conf.d/20-mpire-wayland.conf' 'etc/xdg/kdeglobals')
+        'etc/sddm.conf.d/20-mpire-wayland.conf')
 install=mpire-base.install
 source=('mpire-os-release' '90-mpire-os-release.hook' 'mpire-update' 'mpire-update.service'
         'mpire-update.timer' 'mpireos.preset' 'update.conf' 'snapshot'
-        '20-mpire-wayland.conf' 'kdeglobals')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+        '20-mpire-wayland.conf')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
     install -Dm755 mpire-os-release "$pkgdir/usr/lib/mpireos/mpire-os-release"
@@ -28,5 +28,4 @@ package() {
         "$(tr -d '[:space:]' < snapshot)" > mpire-snapshot
     install -Dm644 mpire-snapshot "$pkgdir/etc/pacman.d/mpire-snapshot"
     install -Dm644 20-mpire-wayland.conf "$pkgdir/etc/sddm.conf.d/20-mpire-wayland.conf"
-    install -Dm644 kdeglobals "$pkgdir/etc/xdg/kdeglobals"
 }
