@@ -16,7 +16,7 @@ depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-wayland' 'layer-shell-qt' '
 makedepends=('cmake' 'ninja' 'qt6-base' 'qt6-declarative' 'layer-shell-qt')
 backup=('etc/sddm.conf.d/30-mpire-theme.conf'
         'etc/xdg/kdeglobals' 'etc/xdg/kwinrc' 'etc/xdg/breezerc' 'etc/xdg/ksplashrc'
-        'etc/xdg/kcminputrc' 'etc/xdg/kglobalshortcutsrc')
+        'etc/xdg/kcminputrc')
 
 build() {
     cmake -S "$startdir/desktop" -B build -G Ninja \

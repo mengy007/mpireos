@@ -1,6 +1,0 @@
-# MpireOS's launcher (mpire-shell) takes Alt+Space and Alt+F2 from KRunner.
-[services][org.kde.krunner.desktop]
-_launch=none
-
-[services][org.mpireos.launcher.desktop]
-_launch=Alt+Space\tAlt+F2

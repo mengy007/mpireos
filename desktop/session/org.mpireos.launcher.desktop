@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=MpireOS Launcher
-Comment=Search apps and settings
-Exec=mpire-shell --toggle launcher
-Icon=search
-NoDisplay=true
-X-KDE-Shortcuts=Alt+Space,Alt+F2

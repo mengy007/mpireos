@@ -43,8 +43,8 @@ install(FILES session/30-mpire-theme.conf DESTINATION ${CMAKE_INSTALL_FULL_SYSCO
 install(FILES kde/MpireOS.colors DESTINATION ${CMAKE_INSTALL_DATADIR}/color-schemes)
 install(FILES kde/kdeglobals kde/kwinrc kde/breezerc kde/ksplashrc kde/kcminputrc
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg)
-# Alt+Space opens our launcher (KDE's global shortcut service reads this).
-install(FILES session/org.mpireos.launcher.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-install(FILES session/org.mpireos.launcher.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/kglobalaccel)
-install(FILES kde/kglobalshortcutsrc DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg)
+# Alt+Space, Alt+F2, and Search open our launcher: this entry shadows KRunner's
+# (KDE's global shortcut service reads both directories).
+install(FILES session/org.kde.krunner.desktop DESTINATION /usr/local/share/applications)
+install(FILES session/org.kde.krunner.desktop DESTINATION /usr/local/share/kglobalaccel)
 install(DIRECTORY kde/lookandfeel/ DESTINATION ${CMAKE_INSTALL_DATADIR}/plasma/look-and-feel/org.mpireos.desktop)

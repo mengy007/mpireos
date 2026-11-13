@@ -78,6 +78,10 @@ ci_open_app() {
     as_live mpire-shell --show notifications && report "MPIREOS_CENTER_SHOWN" || report "MPIREOS_CENTER_FAILED"
     sleep 20
     as_live mpire-shell --hide
+    report "MPIREOS_SHORTCUT_LOG XDG_DATA_DIRS=$(printf '%s\n' "${shell_env[@]}" | grep -a '^XDG_DATA_DIRS=' | cut -d= -f2-)"
+    report "MPIREOS_SHORTCUT_LOG $(ls /usr/share/kglobalaccel /usr/local/share/kglobalaccel 2>/dev/null | grep -i -e runner -e mpire | tr '\n' ' ')"
+    grep -a -i -A2 'krunner' "/home/live/.config/kglobalshortcutsrc" 2>/dev/null | head -n 6 \
+        | while read -r line; do report "MPIREOS_SHORTCUT_LOG $line"; done
     # The test opens the launcher itself with Alt+Space, to check the shortcut.
     report "MPIREOS_PANELS_DONE"
 }

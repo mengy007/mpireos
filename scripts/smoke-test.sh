@@ -63,7 +63,7 @@ for ((t = 0; t < timeout; t += 5)); do
             qemu_screenshot "$monitor" "${shot%.ppm}-search.ppm"
             qemu_key "$monitor" esc
         fi
-        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER "$log" || true
+        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT "$log" || true
         exit 0
     fi
     if grep -q -e MPIREOS_DESKTOP_FAIL -e MPIREOS_SETUP_FAIL "$log"; then
