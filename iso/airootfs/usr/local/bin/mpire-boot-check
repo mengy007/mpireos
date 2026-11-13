@@ -53,8 +53,11 @@ ci_open_app() {
     local uid; uid="$(id -u live)"
     runuser -u live -- env XDG_RUNTIME_DIR="/run/user/$uid" WAYLAND_DISPLAY=wayland-0 \
         DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" QT_QPA_PLATFORM=wayland \
-        systemsettings >/dev/null 2>&1 &
+        systemsettings >/tmp/ci-app.log 2>&1 &
     sleep 15
+    if pgrep -u live -x systemsettings >/dev/null; then report "MPIREOS_APP_RUNNING"; else report "MPIREOS_APP_EXITED"; fi
+    ls /run/user/"$uid" 2>/dev/null | tr '\n' ' ' | while read -r line; do report "MPIREOS_APP_LOG runtime: $line"; done
+    tail -n 15 /tmp/ci-app.log 2>/dev/null | while read -r line; do report "MPIREOS_APP_LOG $line"; done
     report "MPIREOS_APP_OPENED"
 }
 setup_log() {

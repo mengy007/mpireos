@@ -41,6 +41,7 @@ for ((t = 0; t < timeout; t += 5)); do
             grep -q MPIREOS_APP_OPENED "$log" && break
             sleep 5
         done
+        grep -a MPIREOS_APP "$log" || true
         qemu_screenshot "$monitor" "${shot%.ppm}-app.ppm"
         exit 0
     fi
