@@ -90,6 +90,8 @@ def main() -> int:
     view.engine().addImportPath(str(ROOT / "style"))
     view.setResizeMode(QQuickView.SizeRootObjectToView)
     view.resize(w, h)
+    if args.scene.startswith("shell-"):
+        view.setColor(Qt.transparent)   # surfaces are transparent, as in mpire-shell
     ctx = view.rootContext()
     keep = [FakeShellApi()]
     ctx.setContextProperty("shellApi", keep[0])
