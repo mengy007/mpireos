@@ -2,6 +2,7 @@
 #pragma once
 
 #include <QIcon>
+#include <QPixmap>
 #include <QQuickImageProvider>
 #include <QUrl>
 

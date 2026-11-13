@@ -3,6 +3,7 @@
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
 #include <QRegularExpression>
+#include <QUrl>
 
 namespace {
 constexpr int kDefaultTimeoutMs = 6000;

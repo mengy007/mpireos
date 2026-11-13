@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QProcess>
+#include <QTimer>
 #include <QRegularExpression>
 
 SystemStatus::SystemStatus(QObject *parent)

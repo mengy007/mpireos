@@ -12,6 +12,7 @@
 #include <QQuickItem>
 #include <QQuickView>
 #include <QScreen>
+#include <QUrl>
 
 #include <LayerShellQt/Window>
 
