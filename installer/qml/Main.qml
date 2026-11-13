@@ -29,7 +29,7 @@ ApplicationWindow {
                       forward ? StackView.PushTransition : StackView.PopTransition)
     }
 
-    // Backdrop: pale lavender with soft light sweeps (design-system.md, Color).
+    // Backdrop: pale teal-gray with soft light sweeps (design-system.md, Color).
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {

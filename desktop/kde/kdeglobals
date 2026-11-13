@@ -6,7 +6,7 @@ menuFont=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 smallestReadableFont=Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 toolBarFont=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 fixed=Hack,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
-AccentColor=124,102,214
+AccentColor=38,156,161
 
 [KDE]
 LookAndFeelPackage=org.mpireos.desktop

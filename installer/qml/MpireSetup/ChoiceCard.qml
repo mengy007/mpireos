@@ -78,7 +78,7 @@ AbstractButton {
             radius: 10
             color: "transparent"
             border.width: 2
-            border.color: control.selected ? Theme.accent : "#D5D2DE"
+            border.color: control.selected ? Theme.accent : Theme.controlOff
             Rectangle {
                 anchors.centerIn: parent
                 width: 10; height: 10; radius: 5

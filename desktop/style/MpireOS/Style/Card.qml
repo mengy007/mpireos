@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 
-// A white rounded card with a soft violet-tinted shadow (elevation 2).
+// A white rounded card with a soft teal-tinted shadow (elevation 2).
 Item {
     id: root
     default property alias content: inner.data
@@ -15,7 +15,7 @@ Item {
         visible: !root.plain
         anchors.fill: bg
         radius: bg.radius
-        color: Qt.rgba(0.235, 0.188, 0.431, [0, 0.06, 0.08, 0.12, 0.18][root.level])
+        color: Qt.rgba(0.043, 0.227, 0.267, [0, 0.06, 0.08, 0.12, 0.18][root.level])
         blur: [0, 2, 24, 48, 72][root.level]
         offset.y: [0, 1, 8, 18, 28][root.level]
     }

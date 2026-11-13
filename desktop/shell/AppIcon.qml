@@ -7,7 +7,7 @@ Item {
     id: root
     property string glyph: "grid"
     property color topColor: "#FFFFFF"
-    property color bottomColor: "#F1EFF6"
+    property color bottomColor: "#EEF3F5"
     property color glyphColor: Theme.textSecondary
     property real size: 52
     property bool running: false
@@ -22,7 +22,7 @@ Item {
     RectangularShadow {
         anchors.fill: face
         radius: face.radius
-        color: Qt.rgba(0.235, 0.188, 0.431, 0.10)
+        color: Qt.rgba(0.043, 0.227, 0.267, 0.10)
         blur: 12
         offset.y: 4
     }

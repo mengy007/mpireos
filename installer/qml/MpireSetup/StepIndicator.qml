@@ -18,7 +18,7 @@ RowLayout {
                 Layout.preferredWidth: index === root.current ? 22 : 6
                 Layout.preferredHeight: 6
                 radius: 3
-                color: index <= root.current ? Theme.accent : "#D5D2DE"
+                color: index <= root.current ? Theme.accent : Theme.controlOff
                 Behavior on Layout.preferredWidth { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 Behavior on color { ColorAnimation { duration: Theme.animNormal } }
             }

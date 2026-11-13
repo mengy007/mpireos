@@ -16,7 +16,7 @@ Popup {
     modal: true
     padding: 24
     background: Rectangle { radius: Theme.radius; color: Theme.surface; border.color: Theme.border }
-    Overlay.modal: Rectangle { color: "#663C306E" }
+    Overlay.modal: Rectangle { color: Theme.scrim }
 
     contentItem: ColumnLayout {
         spacing: 8
