@@ -19,3 +19,15 @@ PY
         echo "SCREENSHOT_END"
     fi
 }
+
+# qemu_key <monitor-socket> <key>: presses a key combination, e.g. alt-f4.
+qemu_key() {
+    python3 - "$1" "$2" <<'PY' || true
+import socket, sys, time
+s = socket.socket(socket.AF_UNIX)
+s.connect(sys.argv[1])
+s.sendall(f"sendkey {sys.argv[2]}\n".encode())
+time.sleep(1)
+s.close()
+PY
+}

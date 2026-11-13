@@ -70,7 +70,7 @@ Item {
             font.pixelSize: 96
             font.weight: Font.ExtraLight
             font.letterSpacing: -4
-            text: Qt.formatTime(root.now, "h:mm")
+            text: (root.now.getHours() % 12 || 12) + Qt.formatTime(root.now, ":mm")   // 12-hour, like the top bar
         }
         Label {
             Layout.alignment: Qt.AlignHCenter

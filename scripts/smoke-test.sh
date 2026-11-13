@@ -31,6 +31,10 @@ for ((t = 0; t < timeout; t += 5)); do
         echo "PASS: desktop and installer started after ~${t}s"
         grep -a MPIREOS_SETUP_LOG "$log" || true
         screenshot
+        # Close the installer (Alt+F4) to see the desktop behind it.
+        qemu_key "$monitor" alt-f4
+        sleep 8
+        qemu_screenshot "$monitor" "${shot%.ppm}-desktop.ppm"
         exit 0
     fi
     if grep -q -e MPIREOS_DESKTOP_FAIL -e MPIREOS_SETUP_FAIL "$log"; then
