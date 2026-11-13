@@ -1,16 +1,30 @@
 #include "shellapi.h"
 
+#include <QClipboard>
+#include <QDesktopServices>
 #include <QDir>
-#include <QFile>
+#include <QGuiApplication>
 #include <QProcess>
+#include <QUrl>
 
 ShellApi::ShellApi(QObject *parent)
     : QObject(parent)
 {
-    readBattery();
-    m_poll.setInterval(30000);
-    connect(&m_poll, &QTimer::timeout, this, &ShellApi::readBattery);
-    m_poll.start();
+}
+
+bool ShellApi::isPanel(const QString &name)
+{
+    return name == QLatin1String("launcher") || name == QLatin1String("quick-settings")
+        || name == QLatin1String("notifications");
+}
+
+void ShellApi::setPanel(const QString &panel)
+{
+    const QString p = isPanel(panel) ? panel : QString();
+    if (p == m_panel)
+        return;
+    m_panel = p;
+    emit panelChanged();
 }
 
 void ShellApi::launch(const QString &command)
@@ -19,27 +33,22 @@ void ShellApi::launch(const QString &command)
     if (args.isEmpty())
         return;
     const QString program = args.takeFirst();
-    if (!QProcess::startDetached(program, args))
+    if (!QProcess::startDetached(program, args, QDir::homePath()))
         qWarning("mpire-shell: could not start %s", qPrintable(command));
 }
 
-void ShellApi::readBattery()
+void ShellApi::openUrl(const QString &url)
 {
-    int level = -1;
-    const QDir supplies(QStringLiteral("/sys/class/power_supply"));
-    for (const QString &name : supplies.entryList({QStringLiteral("BAT*")}, QDir::Dirs | QDir::System)) {
-        QFile f(supplies.filePath(name + QStringLiteral("/capacity")));
-        if (f.open(QIODevice::ReadOnly)) {
-            bool ok = false;
-            const int v = f.readAll().trimmed().toInt(&ok);
-            if (ok) {
-                level = v;
-                break;
-            }
-        }
-    }
-    if (level != m_battery) {
-        m_battery = level;
-        emit batteryChanged();
-    }
+    if (!QProcess::startDetached(QStringLiteral("xdg-open"), {url}))
+        QDesktopServices::openUrl(QUrl(url));
 }
+
+void ShellApi::copy(const QString &text)
+{
+    QGuiApplication::clipboard()->setText(text);
+}
+
+void ShellApi::ShowPanel(const QString &name) { setPanel(name); }
+void ShellApi::TogglePanel(const QString &name) { setPanel(m_panel == name ? QString() : name); }
+void ShellApi::HidePanel() { setPanel(QString()); }
+void ShellApi::ToggleLauncher() { TogglePanel(QStringLiteral("launcher")); }

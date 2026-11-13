@@ -96,7 +96,7 @@ Item {
         Rectangle {
             implicitWidth: kbd.implicitWidth + 12; implicitHeight: 20; radius: 5
             color: "transparent"; border.color: Theme.border
-            Label { id: kbd; anchors.centerIn: parent; role: "small"; secondary: true; text: "Super Space"; font.pixelSize: 10 }
+            Label { id: kbd; anchors.centerIn: parent; role: "small"; secondary: true; text: "Alt Space"; font.pixelSize: 10 }
         }
     }
 }

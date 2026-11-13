@@ -61,6 +61,25 @@ ci_open_app() {
     report "MPIREOS_APP_LOG env: $(printf '%s\n' "${shell_env[@]}" | grep -a -e '^WAYLAND_DISPLAY=' -e '^QT_QPA_PLATFORM=' | tr '\n' ' ')"
     tail -n 15 /tmp/ci-app.log 2>/dev/null | while read -r line; do report "MPIREOS_APP_LOG $line"; done
     report "MPIREOS_APP_OPENED"
+
+    # Then Mpire Desktop's own panels, one at a time; the test screenshots each.
+    as_live() { runuser -u live -- env -i "${shell_env[@]}" "$@"; }
+    sleep 20
+    pkill -u live -x systemsettings
+    as_live notify-send -a "Mpire Setup" -i system-software-install -t 60000 \
+        "Welcome to MpireOS" "Your desktop is ready. Press Alt+Space to find anything." >/tmp/ci-notify.log 2>&1 \
+        || tail -n 5 /tmp/ci-notify.log | while read -r line; do report "MPIREOS_NOTIFY_LOG $line"; done
+    as_live notify-send -a "Discover" -i plasmadiscover -t 60000 "Updates are ready" "MpireOS takes a snapshot before installing them."
+    sleep 5
+    report "MPIREOS_NOTIFY_SHOWN"
+    sleep 20
+    as_live mpire-shell --show quick-settings && report "MPIREOS_QUICK_SHOWN" || report "MPIREOS_QUICK_FAILED"
+    sleep 20
+    as_live mpire-shell --show notifications && report "MPIREOS_CENTER_SHOWN" || report "MPIREOS_CENTER_FAILED"
+    sleep 20
+    as_live mpire-shell --hide
+    # The test opens the launcher itself with Alt+Space, to check the shortcut.
+    report "MPIREOS_PANELS_DONE"
 }
 setup_log() {
     [ -f /tmp/mpire-setup.log ] || { report "MPIREOS_SETUP_LOG (no output)"; return; }

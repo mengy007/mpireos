@@ -36,6 +36,8 @@ pipewire-pulse
 pipewire-alsa
 wireplumber
 networkmanager
+brightnessctl
+libnotify
 noto-fonts
 noto-fonts-emoji
 

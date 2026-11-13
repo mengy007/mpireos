@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
-project(mpire-desktop VERSION 0.2 LANGUAGES CXX)
+project(mpire-desktop VERSION 0.3 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.9 REQUIRED COMPONENTS Gui Qml Quick)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Gui Qml Quick DBus)
 find_package(LayerShellQt REQUIRED)
 
 include(GNUInstallDirs)
@@ -18,9 +18,15 @@ else()
     set(shell_qml_dir "${MPIRE_SHELL_QML_INSTALL_DIR}")
 endif()
 
-add_executable(mpire-shell src/main.cpp src/shellapi.cpp src/shellapi.h)
+add_executable(mpire-shell
+    src/main.cpp
+    src/shellapi.cpp src/shellapi.h
+    src/apps.cpp src/apps.h
+    src/iconprovider.h
+    src/notifications.cpp src/notifications.h
+    src/systemstatus.cpp src/systemstatus.h)
 target_compile_definitions(mpire-shell PRIVATE MPIRE_SHELL_QML_DIR="${shell_qml_dir}")
-target_link_libraries(mpire-shell PRIVATE Qt6::Gui Qt6::Qml Qt6::Quick LayerShellQt::Interface)
+target_link_libraries(mpire-shell PRIVATE Qt6::Gui Qt6::Qml Qt6::Quick Qt6::DBus LayerShellQt::Interface)
 
 install(TARGETS mpire-shell RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 # Shared style module (also used by Mpire Setup and the login screen).
@@ -35,6 +41,10 @@ install(FILES session/30-mpire-theme.conf DESTINATION ${CMAKE_INSTALL_FULL_SYSCO
 # Interim: MpireOS's look for the KDE pieces still in use (KWin title bars,
 # KDE and Qt apps), until our own components replace them.
 install(FILES kde/MpireOS.colors DESTINATION ${CMAKE_INSTALL_DATADIR}/color-schemes)
-install(FILES kde/kdeglobals kde/kwinrc kde/breezerc kde/ksplashrc kde/kcminputrc kde/krunnerrc
+install(FILES kde/kdeglobals kde/kwinrc kde/breezerc kde/ksplashrc kde/kcminputrc
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg)
+# Alt+Space opens our launcher (KDE's global shortcut service reads this).
+install(FILES session/org.mpireos.launcher.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES session/org.mpireos.launcher.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/kglobalaccel)
+install(FILES kde/kglobalshortcutsrc DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg)
 install(DIRECTORY kde/lookandfeel/ DESTINATION ${CMAKE_INSTALL_DATADIR}/plasma/look-and-feel/org.mpireos.desktop)
