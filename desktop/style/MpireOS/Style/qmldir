@@ -1,0 +1,7 @@
+module MpireOS.Style
+singleton Theme 1.0 Theme.qml
+Icon 1.0 Icon.qml
+Overline 1.0 Overline.qml
+Label 1.0 Label.qml
+Card 1.0 Card.qml
+Backdrop 1.0 Backdrop.qml

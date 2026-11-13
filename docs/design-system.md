@@ -150,13 +150,13 @@ A 44 px frosted bar across the top.
 
 ### Dock
 
-A floating, centered dock 24 px above the bottom edge: frosted `chrome`, `radiusDock`, elevation 3, 52 px icons with 10 px gaps. The launcher button sits first, separated by a hairline; settings sits last, after another hairline. Running apps get a small accent dot below the icon.
+A centered row of app icons 24 px above the bottom edge, with **no panel behind it**: the icons float directly on the desktop. 52 px icons with 12 px gaps. The launcher button sits first, separated by a hairline; settings sits last, after another hairline. Running apps get a small accent dot below the icon.
 
 ### Desktop greeting and widgets
 
 - **Greeting** at the top left: the date as an overline ("THURSDAY, NOVEMBER 12") above a Greeting-style line ("A little space for everything." with a small accent sparkle).
 - **Shortcuts** at the top right: My files and Wallpapers as small icon tiles with labels.
-- **Widgets** in a right-hand column of cards: **Today** (large day number, month grid with today in an accent circle, and a one-line note), **A moment of focus** (a 25:00 focus timer with a round accent play button), and **Now playing** (album art, title, source, play).
+- **Widgets** in a right-hand column, **without card backgrounds**: their content sits directly on the desktop, separated by space rather than boxes: **Today** (large day number, month grid with today in an accent circle, and a one-line note), **A moment of focus** (a 25:00 focus timer with a round accent play button), and **Now playing** (album art, title, source, play).
 - A quiet "Make it yours" link under the widgets opens desktop customization.
 - **Bottom corners:** the MpireOS mark with "Thoughtfully yours." on the left, and a "Find your flow" search hint with its shortcut on the right.
 
