@@ -31,3 +31,15 @@ time.sleep(1)
 s.close()
 PY
 }
+
+# qemu_mouse <monitor-socket> <dx> <dy>: moves the mouse by that much (relative).
+qemu_mouse() {
+    python3 - "$1" "$2" "$3" <<'PY' || true
+import socket, sys, time
+s = socket.socket(socket.AF_UNIX)
+s.connect(sys.argv[1])
+s.sendall(f"mouse_move {sys.argv[2]} {sys.argv[3]}\n".encode())
+time.sleep(1)
+s.close()
+PY
+}

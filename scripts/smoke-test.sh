@@ -63,6 +63,12 @@ for ((t = 0; t < timeout; t += 5)); do
             qemu_screenshot "$monitor" "${shot%.ppm}-search.ppm"
             qemu_key "$monitor" esc
         fi
+        # The dock hides itself; pushing the pointer against the bottom edge brings it back.
+        sleep 3
+        qemu_screenshot "$monitor" "${shot%.ppm}-dock-hidden.ppm"
+        for _ in 1 2 3 4; do qemu_mouse "$monitor" 0 400; done
+        sleep 2
+        qemu_screenshot "$monitor" "${shot%.ppm}-dock-shown.ppm"
         grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT "$log" || true
         exit 0
     fi

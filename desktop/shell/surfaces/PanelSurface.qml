@@ -56,7 +56,7 @@ Item {
     QuickSettings {
         id: quick
         visible: surface.panel === "quick-settings"
-        anchors { right: parent.right; rightMargin: 12; top: parent.top; topMargin: 44 + 8 }
+        anchors { right: parent.right; rightMargin: 12; top: parent.top; topMargin: Theme.topBarHeight + 8 }
         height: implicitHeight
         status: systemStatus
         notifier: notifications
@@ -66,7 +66,7 @@ Item {
 
     NotificationCenter {
         visible: surface.panel === "notifications"
-        anchors { right: parent.right; rightMargin: 12; top: parent.top; topMargin: 44 + 8 }
+        anchors { right: parent.right; rightMargin: 12; top: parent.top; topMargin: Theme.topBarHeight + 8 }
         height: implicitHeight
         server: notifications
         now: surface.now
