@@ -32,13 +32,24 @@ s.close()
 PY
 }
 
-# qemu_mouse <monitor-socket> <dx> <dy>: moves the mouse by that much (relative).
-qemu_mouse() {
+# qemu_pointer <qmp-socket> <x> <y>: puts an absolute pointer (usb-tablet) at
+# x, y, each 0-32767 across the screen. Uses QMP: HMP's mouse_move did not
+# move the pointer in the guest.
+qemu_pointer() {
     python3 - "$1" "$2" "$3" <<'PY' || true
-import socket, sys, time
+import json, socket, sys, time
 s = socket.socket(socket.AF_UNIX)
 s.connect(sys.argv[1])
-s.sendall(f"mouse_move {sys.argv[2]} {sys.argv[3]}\n".encode())
+f = s.makefile("rw")
+f.readline()                                   # greeting
+def call(cmd, **args):
+    f.write(json.dumps({"execute": cmd, "arguments": args} if args else {"execute": cmd}) + "\n")
+    f.flush()
+    return f.readline().strip()
+call("qmp_capabilities")
+print("qmp:", call("input-send-event", events=[
+    {"type": "abs", "data": {"axis": "x", "value": int(sys.argv[2])}},
+    {"type": "abs", "data": {"axis": "y", "value": int(sys.argv[3])}}]))
 time.sleep(1)
 s.close()
 PY
