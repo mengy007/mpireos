@@ -59,6 +59,11 @@ jobs:
           sudo apt-get install -yq --no-install-recommends qemu-system-x86
           SERIAL_LOG=out/serial.log SCREENSHOT=out/live-desktop.ppm scripts/smoke-test.sh out/*.iso 1200
 
+      - name: Firmware boot matrix (BIOS and UEFI; IDE, SATA, VirtIO SCSI and USB, as Proxmox offers them)
+        run: |
+          sudo apt-get install -yq --no-install-recommends ovmf
+          scripts/firmware-matrix.sh out/*.iso
+
       - name: Install test (UEFI, unattended install then boot)
         run: |
           sudo apt-get install -yq --no-install-recommends ovmf xorriso qemu-utils
