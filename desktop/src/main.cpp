@@ -17,6 +17,7 @@
 
 #include <LayerShellQt/Window>
 
+#include "ai.h"
 #include "apps.h"
 #include "desktopsettings.h"
 #include "filesearch.h"
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
     QCommandLineParser cli;
     cli.setApplicationDescription(QStringLiteral("Mpire Desktop's shell: desktop, top bar, dock, and panels."));
     cli.addHelpOption();
-    const QCommandLineOption show(QStringLiteral("show"), QStringLiteral("Open a panel in the running shell: search, launcher, quick-settings, notifications, desktop-menu, wallpaper."), QStringLiteral("panel"));
+    const QCommandLineOption show(QStringLiteral("show"), QStringLiteral("Open a panel in the running shell: search, assistant, ai-settings, launcher, quick-settings, notifications, desktop-menu, wallpaper."), QStringLiteral("panel"));
     const QCommandLineOption toggle(QStringLiteral("toggle"), QStringLiteral("Open or close a panel in the running shell."), QStringLiteral("panel"));
     const QCommandLineOption hide(QStringLiteral("hide"), QStringLiteral("Close the open panel in the running shell."));
     cli.addOptions({show, toggle, hide});
@@ -113,6 +114,7 @@ int main(int argc, char *argv[])
     DesktopSettings desktopSettings;
     FileSearch files;
     SystemTray tray;
+    AiAssistant ai;
 
     QDBusConnection bus = QDBusConnection::sessionBus();
     if (!bus.registerObject(QString::fromLatin1(kPath), &api, QDBusConnection::ExportScriptableSlots)
@@ -132,6 +134,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("desktopSettings"), &desktopSettings);
     engine.rootContext()->setContextProperty(QStringLiteral("fileSearch"), &files);
     engine.rootContext()->setContextProperty(QStringLiteral("systemTray"), &tray);
+    engine.rootContext()->setContextProperty(QStringLiteral("ai"), &ai);
 
     QScreen *screen = QGuiApplication::primaryScreen();
     const QSize size = screen->size();
@@ -179,8 +182,8 @@ int main(int argc, char *argv[])
     }
     dock->show();
 
-    // Panels (universal search, launcher, quick settings, notification list,
-    // desktop menu, wallpaper picker, tray menus): one full-screen overlay, shown only while a panel is
+    // Panels (universal search, the assistant, AI settings, launcher, quick
+    // settings, notification list, desktop menu, wallpaper picker, tray menus): one full-screen overlay, shown only while a panel is
     // open. Clicking outside closes it.
     QQuickView *panels = makeSurface(&engine, QStringLiteral("surfaces/PanelSurface.qml"), screen);
     Window *pn = layer(panels, Window::LayerOverlay, allEdges, QStringLiteral("mpire-panels"));
@@ -206,10 +209,12 @@ int main(int argc, char *argv[])
             panels->hide();
             return;
         }
-        // Search and the launcher take the keyboard for typing, and tray menus
-        // for their arrow keys; other panels only when clicked.
+        // Search, the launcher, the assistant and AI settings take the keyboard
+        // for typing, and tray menus for their arrow keys; other panels only
+        // when clicked.
         const bool typing = api.panel() == QLatin1String("launcher") || api.panel() == QLatin1String("search")
-            || api.panel() == QLatin1String("tray-menu");
+            || api.panel() == QLatin1String("tray-menu") || api.panel() == QLatin1String("assistant")
+            || api.panel() == QLatin1String("ai-settings");
         pn->setKeyboardInteractivity(typing ? Window::KeyboardInteractivityExclusive : Window::KeyboardInteractivityOnDemand);
         if (desktopSettings.browsing())
             return;

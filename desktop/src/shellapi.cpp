@@ -17,7 +17,8 @@ bool ShellApi::isPanel(const QString &name)
     return name == QLatin1String("launcher") || name == QLatin1String("quick-settings")
         || name == QLatin1String("notifications") || name == QLatin1String("desktop-menu")
         || name == QLatin1String("wallpaper") || name == QLatin1String("search")
-        || name == QLatin1String("tray-menu");
+        || name == QLatin1String("tray-menu") || name == QLatin1String("assistant")
+        || name == QLatin1String("ai-settings");
 }
 
 void ShellApi::setPanel(const QString &panel)
@@ -76,3 +77,4 @@ void ShellApi::TogglePanel(const QString &name)
 void ShellApi::HidePanel() { setPanel(QString()); }
 void ShellApi::ToggleLauncher() { TogglePanel(QStringLiteral("launcher")); }
 void ShellApi::ToggleSearch() { TogglePanel(QStringLiteral("search")); }
+void ShellApi::ToggleAssistant() { TogglePanel(QStringLiteral("assistant")); }

@@ -5,8 +5,8 @@
     python3 desktop/tools/preview.py desktop  [--shot out.png]
     python3 desktop/tools/preview.py greeter  [--shot out.png] [--fake-sddm]
     python3 desktop/tools/preview.py shell-background|shell-topbar|shell-dock [--shot out.png]
-    python3 desktop/tools/preview.py panels --panel search|launcher|quick-settings|notifications|popups|desktop-menu|wallpaper|tray-menu
-                                            [--query "text"] [--menu-at 520,300] [--wallpaper mpire:lagoon] [--shot out.png]
+    python3 desktop/tools/preview.py panels --panel search|assistant|ai-settings|launcher|quick-settings|notifications|popups|desktop-menu|wallpaper|tray-menu
+                                            [--query "text"] [--ai none|ready|chat|streaming] [--ai-tab cloud|local|network] [--menu-at 520,300] [--wallpaper mpire:lagoon] [--shot out.png]
 
 The top bar shows sample apps' tray icons (Sync, Chat, Steam-like "Games"),
 and search finds sample files.
@@ -363,6 +363,123 @@ class FakeFileSearch(QObject):
     def reveal(self, path): print("reveal:", path)
 
 
+AI_PRESETS = [
+    dict(id="anthropic", name="Anthropic", blurb="Claude models", keyUrl="https://console.anthropic.com/settings/keys"),
+    dict(id="openai", name="OpenAI", blurb="GPT models", keyUrl="https://platform.openai.com/api-keys"),
+    dict(id="gemini", name="Google Gemini", blurb="Gemini models", keyUrl="https://aistudio.google.com/apikey"),
+    dict(id="openrouter", name="OpenRouter", blurb="Many models, one key", keyUrl="https://openrouter.ai/keys"),
+    dict(id="custom", name="Other service", blurb="Any OpenAI-compatible API", keyUrl=""),
+]
+AI_PROVIDERS = [
+    dict(id="anthropic", name="Anthropic", kind="anthropic", where="cloud", model="claude-opus-5-5", needsKey=True,
+         hasKey=True, keyLabel="Encrypted on this computer", isDefault=True),
+    dict(id="ollama-192-168-1-40", name="Ollama on studio", kind="openai", where="network", model="qwen3:14b",
+         needsKey=False, hasKey=False, keyLabel="", isDefault=False),
+    dict(id="ollama", name="Ollama on this computer", kind="openai", where="local", model="llama3.2:3b",
+         needsKey=False, hasKey=False, keyLabel="", isDefault=False),
+]
+AI_SERVERS = [
+    dict(server="ollama", host="192.168.1.40", port=11434, url="http://192.168.1.40:11434/v1", where="network",
+         models=["qwen3:14b", "llama3.2:3b", "gemma3:12b"], label="Ollama on studio", added=True),
+    dict(server="lmstudio", host="192.168.1.52", port=1234, url="http://192.168.1.52:1234/v1", where="network",
+         models=["openai/gpt-oss-20b"], label="LM Studio on gaming-pc", added=False),
+    dict(server="ollama", host="127.0.0.1", port=11434, url="http://127.0.0.1:11434/v1", where="local",
+         models=["llama3.2:3b"], label="Ollama on this computer", added=True),
+]
+AI_CHAT = [
+    dict(role="user", text="How do I take a screenshot?"),
+    dict(role="assistant", provider="Anthropic", text=(
+        "Press **Print Screen**. Spectacle opens, and you can:\n\n"
+        "1. Pick the whole screen, a window, or a region\n"
+        "2. Click **Save** or **Copy to Clipboard**\n\n"
+        "Screenshots go to `~/Pictures/Screenshots`.")),
+    dict(role="user", text="Can I undo an update that broke something?"),
+]
+
+
+class FakeAi(QObject):
+    """Stands in for AiAssistant (src/ai.h). state: none, ready, chat, or streaming."""
+    statusChanged = Signal()
+    messagesChanged = Signal()
+    partialChanged = Signal()
+    busyChanged = Signal()
+    serversChanged = Signal()
+    modelsChanged = Signal()
+    noticeChanged = Signal()
+    workingChanged = Signal()
+
+    def __init__(self, state="ready"):
+        super().__init__()
+        self._state = state
+        self._providers = [] if state == "none" else AI_PROVIDERS
+        self._messages = AI_CHAT if state in ("chat", "streaming") else []
+        self._partial = ("Yes. MpireOS takes a snapshot before every update, so you can go back:\n\n"
+                         "1. Restart and pick **MpireOS snapshots** in the boot menu\n"
+                         "2. Choose the snapshot from before the update") if state == "streaming" else ""
+
+    providers = Property("QVariantList", lambda self: self._providers, notify=statusChanged)
+    presets = Property("QVariantList", lambda self: AI_PRESETS, notify=statusChanged)
+    current = Property("QVariantMap", lambda self: self._providers[0] if self._providers else {}, notify=statusChanged)
+    ready = Property(bool, lambda self: bool(self._providers), notify=statusChanged)
+    available = Property(bool, lambda self: True, constant=True)
+    gateway = Property(bool, lambda self: False, notify=statusChanged)
+    messages = Property("QVariantList", lambda self: self._messages, notify=messagesChanged)
+    partial = Property(str, lambda self: self._partial, notify=partialChanged)
+    busy = Property(bool, lambda self: self._state == "streaming", notify=busyChanged)
+    servers = Property("QVariantList", lambda self: AI_SERVERS, notify=serversChanged)
+    discovering = Property(bool, lambda self: False, notify=serversChanged)
+    searchedNetwork = Property(bool, lambda self: True, notify=serversChanged)
+    models = Property("QVariantMap", lambda self: {"anthropic": ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]}, notify=modelsChanged)
+    notice = Property(str, lambda self: "", notify=noticeChanged)
+    noticeError = Property(bool, lambda self: False, notify=noticeChanged)
+    working = Property(bool, lambda self: False, notify=workingChanged)
+
+    @Slot()
+    def refresh(self): pass
+
+    @Slot(str)
+    def ask(self, text): print("ask:", text)
+
+    @Slot()
+    def stop(self): print("stop")
+
+    @Slot()
+    def clear(self): print("new chat")
+
+    @Slot()
+    def clearNotice(self): pass
+
+    @Slot(str, str, str)
+    def addPreset(self, preset, key, url): print("add", preset, "with a key" if key else "")
+
+    @Slot("QVariantMap")
+    def addServer(self, server): print("add server", server["url"])
+
+    @Slot(str)
+    def addAddress(self, address): print("add address", address)
+
+    @Slot(str)
+    def remove(self, id): print("remove", id)
+
+    @Slot(str)
+    def setDefault(self, id): print("default", id)
+
+    @Slot(str, str)
+    def setModel(self, id, model): print("model", id, model)
+
+    @Slot(str)
+    def loadModels(self, id): print("models of", id)
+
+    @Slot(bool)
+    def discover(self, network): print("discover", network)
+
+    @Slot(bool)
+    def setGateway(self, on): print("gateway", on)
+
+    @Slot()
+    def setupLocal(self): print("set up local AI")
+
+
 class FakeShellApi(QObject):
     """Stands in for mpire-shell's ShellApi (src/shellapi.h)."""
     panelChanged = Signal()
@@ -451,6 +568,9 @@ def main() -> int:
     parser.add_argument("--query", default="", help="panels: text typed into search or the launcher")
     parser.add_argument("--menu-at", default="-1,-1", help="panels: where the desktop menu opens, x,y")
     parser.add_argument("--wallpaper", default="mpire:mist", help="the desktop's wallpaper, e.g. mpire:lagoon")
+    parser.add_argument("--ai", default="ready", choices=["none", "ready", "chat", "streaming"],
+                        help="the assistant's state: nothing set up, ready, a conversation, or a reply streaming in")
+    parser.add_argument("--ai-tab", default="", help="ai-settings: cloud, local, or network")
     parser.add_argument("--pictures", type=Path, nargs="*", default=[], help="wallpaper picker: sample pictures")
     args = parser.parse_args()
     w, h = (int(x) for x in args.size.split("x"))
@@ -467,7 +587,7 @@ def main() -> int:
     menu_at = tuple(float(v) for v in args.menu_at.split(","))
     keep = [FakeShellApi("" if args.panel == "popups" else args.panel, menu_at), FakeAppIndex(), FakeNotifications(now),
             FakeSystemStatus(), FakeDesktopSettings(args.wallpaper, args.pictures),
-            FakeSystemTray(args.panel == "tray-menu"), FakeFileSearch()]
+            FakeSystemTray(args.panel == "tray-menu"), FakeFileSearch(), FakeAi(args.ai)]
     ctx.setContextProperty("shellApi", keep[0])
     ctx.setContextProperty("appIndex", keep[1])
     ctx.setContextProperty("notifications", keep[2])
@@ -475,6 +595,7 @@ def main() -> int:
     ctx.setContextProperty("desktopSettings", keep[4])
     ctx.setContextProperty("systemTray", keep[5])
     ctx.setContextProperty("fileSearch", keep[6])
+    ctx.setContextProperty("ai", keep[7])
     view.engine().addImageProvider("icon", LetterIcons())
     view.engine().addImageProvider("tray", TrayIcons())
     if args.fake_sddm:
@@ -491,6 +612,8 @@ def main() -> int:
     if args.time:
         view.rootObject().setProperty("now", now)
     view.show()
+    if args.ai_tab:
+        view.rootObject().findChild(QObject, "panelSurface").setProperty("aiTab", args.ai_tab)
     if args.panel:
         keep[0].panelChanged.emit()          # as when mpire-shell opens a panel
     if args.query:

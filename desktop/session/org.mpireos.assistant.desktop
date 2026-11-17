@@ -1,0 +1,9 @@
+# MpireOS: Meta+A opens the AI assistant (mpire-ai answers; see docs/ai.md).
+[Desktop Entry]
+Type=Application
+Name=Assistant
+Comment=Ask MpireOS's built-in AI
+Exec=mpire-shell --toggle assistant
+Icon=mpire-assistant
+NoDisplay=true
+X-KDE-Shortcuts=Meta+A

@@ -40,6 +40,7 @@ Goal: boot and install straight into Mpire Desktop, with no Plasma.
 - [ ] `mpire-decoration` and window animations
 - [ ] `mpire-settings`: Wi-Fi, Bluetooth, display, sound, appearance, users, updates, about
 - [ ] `mpire-welcome`: first-run app
+- [x] Built-in AI ([docs/ai.md](docs/ai.md)): `mpire-ai` with cloud, local, and network models, the assistant (Meta+A), Ask AI in universal search, AI settings, and an OpenAI-compatible gateway for apps
 - [ ] Icons, cursors, wallpapers, and sounds
 - [ ] Remove Plasma from the ISO
 

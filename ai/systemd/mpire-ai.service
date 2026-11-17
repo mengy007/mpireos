@@ -1,0 +1,15 @@
+[Unit]
+Description=MpireOS AI gateway (OpenAI-compatible, for apps)
+Documentation=https://github.com/mengy007/mpireos/blob/main/docs/ai.md
+Requires=mpire-ai.socket
+After=mpire-ai.socket
+
+[Service]
+ExecStart=/usr/bin/mpire-ai serve
+Restart=on-failure
+# Keys are read through systemd-creds and the keyring; nothing else is needed.
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=default.target

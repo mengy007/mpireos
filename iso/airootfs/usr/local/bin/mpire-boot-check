@@ -110,8 +110,31 @@ ci_open_app() {
     for f in sync chat legacy; do
         tail -n 3 "/tmp/ci-tray-$f.log" 2>/dev/null | while read -r line; do report "MPIREOS_TRAY_LOG $f: $line"; done
     done
+    ci_ai
     # The test opens the launcher itself with Alt+Space, to check the shortcut.
     report "MPIREOS_PANELS_DONE"
+}
+# MpireOS's built-in AI (mpire-ai), set up as a person would from the command
+# line: a cloud key is stored and removed (to see where keys are kept), then
+# the network is searched for model servers. scripts/smoke-test.sh runs a
+# stand-in model server on the host, which QEMU's network shows at 10.0.2.2,
+# so it is found by a real search of the local network and then answers.
+ci_ai() {
+    as_live mpire-ai add anthropic >/dev/null 2>&1
+    as_live sh -c 'echo sk-ci-not-a-real-key | mpire-ai key set anthropic' 2>&1 | while read -r line; do report "MPIREOS_AI_LOG key: $line"; done
+    report "MPIREOS_AI_LOG key storage: $(as_live mpire-ai --json key status anthropic 2>&1)"
+    report "MPIREOS_AI_LOG key files: $(ls -l /home/live/.local/share/mpire-ai/keys 2>&1 | tail -n +2 | awk '{print $1, $NF}' | tr '\n' ' ')"
+    grep -q sk-ci-not-a-real-key -r /home/live/.config/mpire-ai /home/live/.local/share/mpire-ai 2>/dev/null \
+        && report "MPIREOS_AI_LOG key: FOUND IN PLAIN TEXT" || report "MPIREOS_AI_LOG key: not stored in plain text"
+    as_live mpire-ai remove anthropic >/dev/null 2>&1
+    local started=$SECONDS
+    as_live mpire-ai discover --network --add 2>&1 | while read -r line; do report "MPIREOS_AI_LOG discover: $line"; done
+    report "MPIREOS_AI_LOG discover took $((SECONDS - started))s"
+    as_live mpire-ai status 2>&1 | while read -r line; do report "MPIREOS_AI_LOG status: $line"; done
+    as_live mpire-ai ask "hello from the boot test" 2>&1 | head -c 200 | while read -r line; do report "MPIREOS_AI_LOG ask: $line"; done
+    # The gateway for apps, started by its socket on first use.
+    report "MPIREOS_AI_LOG gateway: $(as_live sh -c 'curl -s --max-time 20 --unix-socket "$XDG_RUNTIME_DIR/mpire-ai.sock" http://localhost/v1/models' 2>&1 | head -c 300)"
+    if as_live mpire-ai status 2>/dev/null | grep -q -e '^\* .*10-0-2-2' -e '^\* .*10\.0\.2\.2'; then report "MPIREOS_AI_READY"; else report "MPIREOS_AI_FAILED"; fi
 }
 setup_log() {
     [ -f /tmp/mpire-setup.log ] || { report "MPIREOS_SETUP_LOG (no output)"; return; }
