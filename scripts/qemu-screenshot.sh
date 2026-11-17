@@ -96,3 +96,32 @@ time.sleep(0.5)
 s.close()
 PY
 }
+
+# qemu_find_color <screen.ppm> <RRGGBB> [rows]: prints "x y", the middle of the
+# pixels of that color (within 12 per channel) in the top <rows> rows of the
+# screen, or fails if there are none. Finds an icon to click.
+qemu_find_color() {
+    python3 - "$1" "$2" "${3:-0}" <<'PY'
+import sys
+path, hexcolor, rows = sys.argv[1], sys.argv[2], int(sys.argv[3])
+want = tuple(int(hexcolor[i:i + 2], 16) for i in (0, 2, 4))
+with open(path, "rb") as f:
+    fields = []
+    while len(fields) < 4:
+        line = f.readline()
+        if not line.startswith(b"#"):
+            fields += line.split()
+    w, h = int(fields[1]), int(fields[2])
+    data = f.read()
+xs, ys = [], []
+for y in range(min(h, rows or h)):
+    for x in range(w):
+        i = (y * w + x) * 3
+        if all(abs(data[i + c] - want[c]) <= 12 for c in range(3)):
+            xs.append(x)
+            ys.append(y)
+if not xs:
+    sys.exit(1)
+print((min(xs) + max(xs)) // 2, (min(ys) + max(ys)) // 2)
+PY
+}

@@ -148,7 +148,7 @@ MpireOS builds the whole desktop, **including its own Wayland compositor**, `mpi
 | Layer | Mpire Desktop component | Notes |
 |---|---|---|
 | Login and lock | `mpire-greeter`, `mpire-lock` | SDDM greeter theme in QML; lock screen of our own |
-| Shell | `mpire-shell` | One process: top bar, dock, app launcher, notifications, quick settings, on-screen displays, task switcher. Uses the Wayland layer-shell protocol. |
+| Shell | `mpire-shell` | One process: top bar (with the system tray: a StatusNotifierItem host, and watcher when no one else runs one), dock, universal search, app launcher, notifications, quick settings, on-screen displays, task switcher. Uses the Wayland layer-shell protocol. |
 | Settings | `mpire-settings` | Our own control center. Talks to standard system services (NetworkManager, PipeWire, UPower, BlueZ, systemd, AccountsService, fwupd). |
 | Compositor | `mpire-compositor` | Window management, input, blur, shadows, animations, workspaces, overview |
 | Window look | `mpire-decoration` | Window title bars and controls, drawn by the compositor |

@@ -86,6 +86,30 @@ ci_open_app() {
     report "MPIREOS_SHORTCUT_LOG $(ls /usr/share/kglobalaccel /usr/local/share/kglobalaccel 2>/dev/null | grep -i -e runner -e mpire | tr '\n' ' ')"
     grep -a -i -A2 'krunner' "/home/live/.config/kglobalshortcutsrc" 2>/dev/null | head -n 6 \
         | while read -r line; do report "MPIREOS_SHORTCUT_LOG $line"; done
+    # Apps with tray icons, for the top bar's system tray: two that use
+    # StatusNotifierItem (as Qt, KDE, Electron, and Ayatana apps do), and one
+    # old-style XEmbed icon, which reaches the tray through xembedsniproxy.
+    local tray_test=/usr/lib/mpire-desktop/mpire-tray-test
+    as_live "$tray_test" --name Sync --color "#5B8DEF" >/tmp/ci-tray-sync.log 2>&1 &
+    sleep 2
+    as_live "$tray_test" --name Chat --color "#7C66D6" >/tmp/ci-tray-chat.log 2>&1 &
+    sleep 2
+    as_live env DBUS_SESSION_BUS_ADDRESS=disabled: QT_QPA_PLATFORM=xcb "$tray_test" --name Legacy --color "#E6B072" \
+        >/tmp/ci-tray-legacy.log 2>&1 &
+    # Some files for universal search to find.
+    runuser -u live -- bash -c '
+        cd /home/live && mkdir -p Documents/Work Pictures
+        printf "%%PDF-1.4\n%%%%EOF\n" > "Documents/Quarterly report.pdf"
+        printf "Revenue,Costs\n10,4\n" > "Documents/Work/report-q3-figures.csv"
+        mkdir -p "Documents/Report drafts"
+        pic="$(find /usr/share/wallpapers -name "*.png" -size +100k 2>/dev/null | head -n 1)"
+        [ -n "$pic" ] && cp "$pic" "Pictures/Report cover.png"'
+    sleep 8
+    report "MPIREOS_TRAY_LOG xembedsniproxy: $(pgrep -u live -x xembedsniproxy >/dev/null && echo running || echo 'not running')"
+    report "MPIREOS_TRAY_LOG watcher: $(as_live busctl --user status org.kde.StatusNotifierWatcher 2>/dev/null | grep -m1 -e '^Comm=' || echo none)"
+    for f in sync chat legacy; do
+        tail -n 3 "/tmp/ci-tray-$f.log" 2>/dev/null | while read -r line; do report "MPIREOS_TRAY_LOG $f: $line"; done
+    done
     # The test opens the launcher itself with Alt+Space, to check the shortcut.
     report "MPIREOS_PANELS_DONE"
 }

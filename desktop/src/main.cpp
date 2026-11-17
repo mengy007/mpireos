@@ -19,10 +19,12 @@
 
 #include "apps.h"
 #include "desktopsettings.h"
+#include "filesearch.h"
 #include "iconprovider.h"
 #include "notifications.h"
 #include "shellapi.h"
 #include "systemstatus.h"
+#include "tray.h"
 
 using LayerShellQt::Window;
 
@@ -86,7 +88,7 @@ int main(int argc, char *argv[])
     QCommandLineParser cli;
     cli.setApplicationDescription(QStringLiteral("Mpire Desktop's shell: desktop, top bar, dock, and panels."));
     cli.addHelpOption();
-    const QCommandLineOption show(QStringLiteral("show"), QStringLiteral("Open a panel in the running shell: launcher, quick-settings, notifications."), QStringLiteral("panel"));
+    const QCommandLineOption show(QStringLiteral("show"), QStringLiteral("Open a panel in the running shell: search, launcher, quick-settings, notifications, desktop-menu, wallpaper."), QStringLiteral("panel"));
     const QCommandLineOption toggle(QStringLiteral("toggle"), QStringLiteral("Open or close a panel in the running shell."), QStringLiteral("panel"));
     const QCommandLineOption hide(QStringLiteral("hide"), QStringLiteral("Close the open panel in the running shell."));
     cli.addOptions({show, toggle, hide});
@@ -109,6 +111,8 @@ int main(int argc, char *argv[])
     NotificationServer notifications;
     SystemStatus status;
     DesktopSettings desktopSettings;
+    FileSearch files;
+    SystemTray tray;
 
     QDBusConnection bus = QDBusConnection::sessionBus();
     if (!bus.registerObject(QString::fromLatin1(kPath), &api, QDBusConnection::ExportScriptableSlots)
@@ -116,14 +120,18 @@ int main(int argc, char *argv[])
         qWarning("mpire-shell: could not register %s on the session bus; shortcuts won't open panels", kService);
     if (!notifications.registerOnBus())
         qWarning("mpire-shell: another notification server is running; apps' notifications won't show here");
+    tray.start();
 
     QQmlEngine engine;
     engine.addImageProvider(QStringLiteral("icon"), new IconProvider);
+    engine.addImageProvider(QStringLiteral("tray"), new TrayIconProvider(&tray));
     engine.rootContext()->setContextProperty(QStringLiteral("shellApi"), &api);
     engine.rootContext()->setContextProperty(QStringLiteral("appIndex"), &apps);
     engine.rootContext()->setContextProperty(QStringLiteral("notifications"), &notifications);
     engine.rootContext()->setContextProperty(QStringLiteral("systemStatus"), &status);
     engine.rootContext()->setContextProperty(QStringLiteral("desktopSettings"), &desktopSettings);
+    engine.rootContext()->setContextProperty(QStringLiteral("fileSearch"), &files);
+    engine.rootContext()->setContextProperty(QStringLiteral("systemTray"), &tray);
 
     QScreen *screen = QGuiApplication::primaryScreen();
     const QSize size = screen->size();
@@ -171,8 +179,8 @@ int main(int argc, char *argv[])
     }
     dock->show();
 
-    // Panels (launcher, quick settings, notification list, desktop menu,
-    // wallpaper picker): one full-screen overlay, shown only while a panel is
+    // Panels (universal search, launcher, quick settings, notification list,
+    // desktop menu, wallpaper picker, tray menus): one full-screen overlay, shown only while a panel is
     // open. Clicking outside closes it.
     QQuickView *panels = makeSurface(&engine, QStringLiteral("surfaces/PanelSurface.qml"), screen);
     Window *pn = layer(panels, Window::LayerOverlay, allEdges, QStringLiteral("mpire-panels"));
@@ -186,14 +194,23 @@ int main(int argc, char *argv[])
         else if (!api.panel().isEmpty())
             panels->show();
     });
+    // A tray icon's menu opens as a panel once the app has sent it, and the
+    // app hears when it closes.
+    QObject::connect(&tray, &SystemTray::menuRequested, &api, [&api] { api.ShowPanel(QStringLiteral("tray-menu")); });
+    QObject::connect(&api, &ShellApi::panelChanged, &tray, [&api, &tray] {
+        if (api.panel() != QLatin1String("tray-menu") && !tray.menuKey().isEmpty())
+            tray.menuClosed();
+    });
     QObject::connect(&api, &ShellApi::panelChanged, panels, [&api, panels, pn, &desktopSettings] {
         if (api.panel().isEmpty()) {
             panels->hide();
             return;
         }
-        // The launcher takes the keyboard for typing; other panels only when clicked.
-        pn->setKeyboardInteractivity(api.panel() == QLatin1String("launcher") ? Window::KeyboardInteractivityExclusive
-                                                                              : Window::KeyboardInteractivityOnDemand);
+        // Search and the launcher take the keyboard for typing, and tray menus
+        // for their arrow keys; other panels only when clicked.
+        const bool typing = api.panel() == QLatin1String("launcher") || api.panel() == QLatin1String("search")
+            || api.panel() == QLatin1String("tray-menu");
+        pn->setKeyboardInteractivity(typing ? Window::KeyboardInteractivityExclusive : Window::KeyboardInteractivityOnDemand);
         if (desktopSettings.browsing())
             return;
         if (!panels->isVisible())

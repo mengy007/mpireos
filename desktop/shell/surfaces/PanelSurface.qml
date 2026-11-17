@@ -3,10 +3,11 @@ import MpireOS.Style
 import "../panels"
 
 // Full-screen overlay (layer-shell overlay layer) that mpire-shell shows only
-// while a panel is open: the launcher, quick settings, the notification list,
-// the desktop's right-click menu, or the wallpaper picker. Clicking outside
-// the panel or pressing Esc closes it.
-// Context properties: shellApi, appIndex, notifications, systemStatus, desktopSettings.
+// while a panel is open: universal search, the launcher, quick settings, the
+// notification list, the desktop's right-click menu, the wallpaper picker, or
+// a tray icon's menu. Clicking outside the panel or pressing Esc closes it.
+// Context properties: shellApi, appIndex, notifications, systemStatus,
+// desktopSettings, fileSearch, systemTray.
 Item {
     id: surface
     readonly property string panel: shellApi.panel
@@ -22,19 +23,22 @@ Item {
         function onPanelChanged() {
             surface.now = new Date()
             if (shellApi.panel === "launcher") launcher.reset()
+            else if (shellApi.panel === "search") search.reset()
             else surface.forceActiveFocus()          // so Esc closes this panel too
             if (shellApi.panel === "notifications") notifications.markRead()
             if (shellApi.panel === "quick-settings") { quick.confirm = ""; systemStatus.refresh() }
             if (shellApi.panel === "desktop-menu") { desktopMenu.reset(); desktopMenu.forceActiveFocus() }
             if (shellApi.panel === "wallpaper") { desktopSettings.refreshPictures(); picker.forceActiveFocus() }
+            if (shellApi.panel === "tray-menu") { trayMenu.reset(); trayMenu.forceActiveFocus() }
         }
     }
 
-    // Dim the desktop behind the launcher; other panels float without a scrim.
+    // Dim the desktop behind the launcher (and, a touch, behind search); other
+    // panels float without a scrim.
     Rectangle {
         anchors.fill: parent
         color: Theme.text
-        opacity: surface.panel === "launcher" ? 0.16 : 0
+        opacity: surface.panel === "launcher" ? 0.16 : surface.panel === "search" ? 0.06 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.animNormal } }
     }
     MouseArea {
@@ -47,6 +51,55 @@ Item {
             else
                 surface.close()
         }
+    }
+
+    UniversalSearch {
+        id: search
+        objectName: "search"
+        visible: surface.panel === "search"
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: Math.max(64, Math.round(parent.height * 0.18))
+        height: implicitHeight
+        apps: appIndex.apps
+        files: fileSearch
+        onOpenApp: id => appIndex.launch(id)
+        onRunCommand: command => shellApi.launch(command)
+        onRunAction: action => systemStatus[action]()
+        onCopyText: text => shellApi.copy(text)
+        onOpenUrl: url => shellApi.openUrl(url)
+        onReveal: path => fileSearch.reveal(path)
+        onClose: surface.close()
+        MouseArea { anchors.fill: parent; z: -1 }
+        // Drops in softly.
+        opacity: visible ? 1 : 0
+        scale: visible ? 1 : 0.97
+        Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+        Behavior on scale { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+    }
+
+    TrayMenu {
+        id: trayMenu
+        objectName: "trayMenu"
+        visible: surface.panel === "tray-menu"
+        entries: systemTray.menu
+        title: systemTray.menuTitle
+        icon: {
+            const items = systemTray.items
+            for (let i = 0; i < items.length; i++) if (items[i].key === systemTray.menuKey) return items[i].icon
+            return ""
+        }
+        height: implicitHeight
+        // Under its icon, kept on screen.
+        x: Math.max(8, Math.min(surface.width - width - 8, Math.round(systemTray.menuX - width / 2)))
+        y: Theme.topBarHeight + 6
+        onPicked: id => { systemTray.menuClicked(id); surface.close() }
+        Keys.onEscapePressed: surface.close()
+        MouseArea { anchors.fill: parent; z: -1 }
+        transformOrigin: Item.Top
+        opacity: visible ? 1 : 0
+        scale: visible ? 1 : 0.96
+        Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+        Behavior on scale { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
     }
 
     Launcher {
