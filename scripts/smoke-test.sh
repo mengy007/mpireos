@@ -74,6 +74,35 @@ for ((t = 0; t < timeout; t += 5)); do
         qemu_pointer "$qmp" 16384 32767
         sleep 2
         qemu_screenshot "$monitor" "${shot%.ppm}-dock-shown.ppm"
+        # Right-click on the desktop opens its menu; "Change wallpaper..." opens
+        # the picker, where Lagoon is picked and Done closes it. Positions are
+        # for the 1280x800 screen and match tools/preview.py at that size:
+        # the menu opens at the pointer, the picker sits 54 px from the top.
+        ref="${shot%.ppm}-dock-shown.ppm"
+        qemu_pointer "$qmp" 16384 16384
+        sleep 2
+        qemu_click "$qmp" 500 260 right "$ref"
+        sleep 2
+        qemu_screenshot "$monitor" "${shot%.ppm}-desktop-menu.ppm"
+        qemu_click "$qmp" 580 284 left "$ref"
+        sleep 4
+        qemu_screenshot "$monitor" "${shot%.ppm}-wallpaper-picker.ppm"
+        qemu_click "$qmp" 548 228 left "$ref"
+        sleep 3
+        qemu_screenshot "$monitor" "${shot%.ppm}-wallpaper-lagoon.ppm"
+        qemu_click "$qmp" 956 721 left "$ref"
+        sleep 3
+        qemu_screenshot "$monitor" "${shot%.ppm}-desktop-lagoon.ppm"
+        # Auto-hide the dock: off (the third menu row), then the dock stays up.
+        qemu_click "$qmp" 500 260 right "$ref"
+        sleep 2
+        qemu_click "$qmp" 580 356 left "$ref"
+        sleep 2
+        qemu_screenshot "$monitor" "${shot%.ppm}-menu-dock-pinned.ppm"
+        qemu_key "$monitor" esc
+        qemu_click "$qmp" 900 200 left "$ref"
+        sleep 4
+        qemu_screenshot "$monitor" "${shot%.ppm}-dock-pinned.ppm"
         grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT "$log" || true
         exit 0
     fi

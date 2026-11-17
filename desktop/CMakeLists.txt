@@ -22,6 +22,7 @@ add_executable(mpire-shell
     src/main.cpp
     src/shellapi.cpp src/shellapi.h
     src/apps.cpp src/apps.h
+    src/desktopsettings.cpp src/desktopsettings.h
     src/iconprovider.h
     src/notifications.cpp src/notifications.h
     src/systemstatus.cpp src/systemstatus.h)
