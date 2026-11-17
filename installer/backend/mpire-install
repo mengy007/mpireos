@@ -342,7 +342,9 @@ class Installer:
 
     def build_initramfs(self):
         # sd-volatile: snapshots boot read-only with a RAM overlay (systemd.volatile=overlay).
-        hooks = ["base", "systemd", "sd-volatile", "autodetect", "microcode", "modconf", "kms",
+        # plymouth: the MpireOS boot splash (mpire-branding), from the first moment
+        # the initramfs runs; it also asks for the disk password when encrypted.
+        hooks = ["base", "systemd", "plymouth", "sd-volatile", "autodetect", "microcode", "modconf", "kms",
                  "keyboard", "sd-vconsole", "block"]
         if self.encrypt:
             hooks.append("sd-encrypt")
@@ -364,18 +366,22 @@ class Installer:
         return self.run("blkid", "-s", "UUID", "-o", "value", device, capture=True).strip()
 
     def install_bootloader(self):
+        # quiet + splash: the MpireOS splash instead of boot messages.
         params = [f"root=UUID={self.uuid(self.root_device)}", "rootflags=subvol=@", "rw",
-                  "quiet", "splash", "loglevel=3"]
+                  "quiet", "splash", "loglevel=3", "rd.udev.log_level=3", "vt.global_cursor_default=0"]
         if self.encrypt:
             params.insert(0, f"rd.luks.name={self.uuid(self.root_part)}={MAPPER_NAME}")
         if self.plan.get("ci"):
-            params += ["console=tty0", "console=ttyS0,115200"]
+            # CI watches the serial console; the splash still goes to the screen.
+            params += ["console=tty0", "console=ttyS0,115200", "plymouth.ignore-serial-consoles"]
         self.write("etc/default/grub",
                    'GRUB_DEFAULT=0\nGRUB_TIMEOUT=3\nGRUB_TIMEOUT_STYLE=hidden\n'
                    'GRUB_DISTRIBUTOR="MpireOS"\n'
                    f'GRUB_CMDLINE_LINUX_DEFAULT="{" ".join(params)}"\n'
                    'GRUB_CMDLINE_LINUX=""\nGRUB_DISABLE_OS_PROBER=false\n'
-                   'GRUB_GFXMODE=auto\nGRUB_GFXPAYLOAD_LINUX=keep\n')
+                   'GRUB_GFXMODE=auto\nGRUB_GFXPAYLOAD_LINUX=keep\n'
+                   # The MpireOS boot menu look; mpire-boot-theme copies it to /boot.
+                   'GRUB_THEME="/boot/grub/themes/mpireos/theme.txt"\n')
         if self.uefi:
             self.chroot("grub-install", "--target=x86_64-efi", "--efi-directory=/boot",
                         "--bootloader-id=MpireOS")
@@ -384,6 +390,7 @@ class Installer:
                         "--removable")
         else:
             self.chroot("grub-install", "--target=i386-pc", self.disk)
+        self.chroot("/usr/lib/mpireos/mpire-boot-theme")
         self.chroot("grub-mkconfig", "-o", "/boot/grub/grub.cfg")
 
     def setup_snapshots(self):

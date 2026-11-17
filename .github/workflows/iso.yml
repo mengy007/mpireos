@@ -41,7 +41,7 @@ jobs:
             -v "$PWD:/src" -w /src \
             -e MPIRE_SIGNING_KEY -e REQUIRE_SIGNING \
             archlinux:latest \
-            bash -c "pacman -Syu --noconfirm --needed archiso base-devel \
+            bash -c "pacman -Syu --noconfirm --needed archiso base-devel grub \
               && ./scripts/build-packages.sh /src/out/repo '${{ inputs.channel || 'stable' }}' \
               && ./iso/build.sh '${{ inputs.channel || 'stable' }}' /src/out"
           sudo chown -R "$(id -u):$(id -g)" out
@@ -59,11 +59,22 @@ jobs:
           sudo apt-get install -yq --no-install-recommends qemu-system-x86
           SERIAL_LOG=out/serial.log SCREENSHOT=out/live-desktop.ppm scripts/smoke-test.sh out/*.iso 1200
 
+      - name: Firmware boot matrix (BIOS and UEFI; IDE, SATA, VirtIO SCSI and USB, as Proxmox offers them)
+        run: |
+          sudo apt-get install -yq --no-install-recommends ovmf
+          scripts/firmware-matrix.sh out/*.iso
+
       - name: Install test (UEFI, unattended install then boot)
         run: |
           sudo apt-get install -yq --no-install-recommends ovmf xorriso qemu-utils
-          INSTALL_LOG=out/install-serial.log BOOT_LOG=out/installed-serial.log SCREENSHOT=out/login-screen.ppm \
-            scripts/install-test.sh out/*.iso 2400
+          WORK_DIR=out/install-work INSTALL_LOG=out/install-serial.log BOOT_LOG=out/installed-serial.log \
+            SCREENSHOT=out/login-screen.ppm scripts/install-test.sh out/*.iso 2400
+
+      # Screenshots of each boot stage (boot menus, splash) on BIOS, UEFI and the
+      # installed disk, for reviewing the boot look. Not a pass/fail test.
+      - name: Boot screenshots
+        continue-on-error: true
+        run: scripts/boot-screens.sh out/*.iso out/boot-screens out/install-work
 
       - name: Upload ISO
         if: always()
@@ -75,6 +86,7 @@ jobs:
             out/SHA256SUMS
             out/*serial.log
             out/*.ppm
+            out/boot-screens/*.ppm
           retention-days: 7
           if-no-files-found: warn
 

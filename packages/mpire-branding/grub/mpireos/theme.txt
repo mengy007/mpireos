@@ -1,0 +1,66 @@
+# MpireOS GRUB theme: the boot menu of installed systems and of the ISO (UEFI).
+# Artwork comes from branding/make-boot-art.py. Fonts are Inter, converted with
+# grub-mkfont; whoever loads this theme must loadfont every *.pf2 next to it
+# (grub-mkconfig does that by itself).
+
+title-text: ""
+desktop-image: "background.png"
+desktop-image-scale-method: "crop"
+desktop-color: "#E4EDEF"
+
+terminal-font: "Inter Regular 14"
+terminal-box: "terminal_box_*.png"
+terminal-left: "10%"
+terminal-top: "12%"
+terminal-width: "80%"
+terminal-height: "76%"
+terminal-border: "0"
+
++ image {
+    left = 50%-48
+    top = 8%
+    width = 96
+    height = 116
+    file = "logo.png"
+}
+
++ boot_menu {
+    left = 50%-270
+    top = 8%+140
+    width = 540
+    height = 52%
+    menu_pixmap_style = "menu_*.png"
+    item_font = "Inter Regular 16"
+    selected_item_font = "Inter SemiBold Regular 16"
+    item_color = "#4F5D6B"
+    selected_item_color = "#FFFFFF"
+    selected_item_pixmap_style = "select_*.png"
+    item_height = 30
+    item_padding = 8
+    item_spacing = 12
+    icon_width = 0
+    icon_height = 0
+    item_icon_space = 0
+    scrollbar = false
+}
+
++ label {
+    id = "__timeout__"
+    left = 0
+    top = 100%-76
+    width = 100%
+    align = "center"
+    font = "Inter Regular 14"
+    color = "#4F5D6B"
+    text = "Starting automatically in %ds"
+}
+
++ label {
+    left = 0
+    top = 100%-36
+    width = 100%
+    align = "center"
+    font = "Inter Regular 12"
+    color = "#8B95A3"
+    text = "↑ ↓ to choose   ·   Enter to start   ·   E to edit   ·   C for a command line"
+}

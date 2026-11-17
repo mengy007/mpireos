@@ -64,6 +64,8 @@ os-prober
 
 # MpireOS
 mpire-base
+mpire-branding
+plymouth
 mpire-keyring
 mpire-setup
 mpire-desktop

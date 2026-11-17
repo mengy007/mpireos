@@ -1,0 +1,31 @@
+# Maintainer: MpireOS contributors
+# MpireOS's boot look: the Plymouth splash (with spinner and disk-password
+# screen) and the GRUB boot menu theme. Artwork is drawn by
+# branding/make-boot-art.py; the ISO's boot menus use the same files.
+pkgname=mpire-branding
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="MpireOS boot splash and boot menu theme"
+arch=('any')
+url="https://github.com/mengy007/mpireos"
+license=('GPL-3.0-or-later')
+depends=('plymouth' 'grub' 'inter-font')
+install=mpire-branding.install
+source=('mpire-boot-theme' 'mpire-boot-theme.hook')
+sha256sums=('SKIP' 'SKIP')
+
+package() {
+    install -Dm755 mpire-boot-theme "$pkgdir/usr/lib/mpireos/mpire-boot-theme"
+    install -Dm644 mpire-boot-theme.hook "$pkgdir/usr/share/libalpm/hooks/mpire-boot-theme.hook"
+
+    install -d "$pkgdir/usr/share/plymouth/themes/mpireos" "$pkgdir/usr/share/grub/themes/mpireos"
+    install -m644 "$startdir"/plymouth/mpireos/* "$pkgdir/usr/share/plymouth/themes/mpireos/"
+    install -m644 "$startdir"/grub/mpireos/* "$pkgdir/usr/share/grub/themes/mpireos/"
+
+    # The OS logo (os-release LOGO=mpireos), shown by About pages.
+    for icon in "$startdir"/icons/*/apps/mpireos.png; do
+        size="$(basename "$(dirname "$(dirname "$icon")")")"
+        install -Dm644 "$icon" "$pkgdir/usr/share/icons/hicolor/$size/apps/mpireos.png"
+    done
+    install -Dm644 "$startdir/icons/256x256/apps/mpireos.png" "$pkgdir/usr/share/pixmaps/mpireos.png"
+}
