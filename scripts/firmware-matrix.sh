@@ -8,7 +8,10 @@
 # i440fx or q35 machine, and the ISO on an IDE, SATA or VirtIO SCSI CD drive,
 # plus the ISO written to a USB stick / disk. The CPU model is Proxmox's default.
 # A case passes when the kernel prints to the serial console (the boot menus
-# add console=ttyS0). Failing cases get a screenshot in the log.
+# add console=ttyS0). The default entry boots quietly behind the splash, so the
+# test picks "Start MpireOS and show start-up details" with its hotkey, D: same
+# boot loader, kernel and initramfs, but the kernel talks. Failing cases get a
+# screenshot in the log.
 set -uo pipefail
 iso="$(realpath "$1")"
 only="${2:-}"
@@ -57,7 +60,9 @@ run_case() {  # name firmware machine bus
             return 0
         fi
         kill -0 $qemu 2>/dev/null || break
-        sleep 2
+        # Keeps pressing D until the menu takes it (firmware ignores it).
+        (( t < 120 )) && qemu_key "$monitor" d >/dev/null 2>&1 || sleep 1
+        sleep 1
     done
     echo "FAIL $name (no kernel output after ${timeout}s)"
     qemu_screenshot "$monitor" "$work/$name.ppm"
