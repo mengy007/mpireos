@@ -17,7 +17,8 @@ timeout="${CASE_TIMEOUT:-240}"
 source "$(dirname "$0")/qemu-screenshot.sh"
 
 accel=(-accel tcg -cpu qemu64)
-[[ -w /dev/kvm ]] && accel=(-enable-kvm -cpu x86-64-v2-AES)
+# Proxmox's default CPU type, x86-64-v2-AES, spelled out (QEMU has no model by that name).
+[[ -w /dev/kvm ]] && accel=(-enable-kvm -cpu qemu64,+cx16,+lahf_lm,+popcnt,+sse4.1,+sse4.2,+ssse3,+aes)
 
 ovmf_code="" ovmf_vars=""
 for f in /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/OVMF/OVMF_CODE.fd; do [[ -f $f ]] && { ovmf_code=$f; break; }; done
