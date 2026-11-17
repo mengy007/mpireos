@@ -90,11 +90,15 @@ ci_open_app() {
     # StatusNotifierItem (as Qt, KDE, Electron, and Ayatana apps do), and one
     # old-style XEmbed icon, which reaches the tray through xembedsniproxy.
     local tray_test=/usr/lib/mpire-desktop/mpire-tray-test
-    as_live "$tray_test" --title Sync --color "#5B8DEF" >/tmp/ci-tray-sync.log 2>&1 &
+    as_live "$tray_test" --label Sync --color "#5B8DEF" >/tmp/ci-tray-sync.log 2>&1 &
     sleep 2
-    as_live "$tray_test" --title Chat --color "#7C66D6" >/tmp/ci-tray-chat.log 2>&1 &
+    as_live "$tray_test" --label Chat --color "#7C66D6" >/tmp/ci-tray-chat.log 2>&1 &
     sleep 2
-    as_live env DBUS_SESSION_BUS_ADDRESS=disabled: QT_QPA_PLATFORM=xcb "$tray_test" --title Legacy --color "#E6B072" \
+    # xembedsniproxy again, with its debug output, to see what it makes of the XEmbed icon.
+    as_live systemctl --user set-environment QT_LOGGING_RULES="kde.xembedsniproxy.debug=true"
+    as_live systemctl --user restart plasma-xembedsniproxy.service
+    sleep 3
+    as_live env DBUS_SESSION_BUS_ADDRESS=disabled: QT_QPA_PLATFORM=xcb "$tray_test" --label Legacy --color "#E6B072" \
         >/tmp/ci-tray-legacy.log 2>&1 &
     # Some files for universal search to find.
     runuser -u live -- bash -c '
@@ -108,7 +112,7 @@ ci_open_app() {
     report "MPIREOS_TRAY_LOG xembedsniproxy: $(pgrep -u live -x xembedsniproxy >/dev/null && echo running || echo 'not running')"
     report "MPIREOS_TRAY_LOG watcher: $(as_live busctl --user status org.kde.StatusNotifierWatcher 2>/dev/null | grep -m1 -e '^Comm=' || echo none)"
     report "MPIREOS_TRAY_LOG items: $(as_live busctl --user get-property org.kde.StatusNotifierWatcher /StatusNotifierWatcher org.kde.StatusNotifierWatcher RegisteredStatusNotifierItems 2>&1 | head -c 600)"
-    journalctl -b _UID="$(id -u live)" --no-pager 2>/dev/null | grep -a -i -e xembed -e 'tray item' | tail -n 8 \
+    journalctl -b _UID="$(id -u live)" --no-pager 2>/dev/null | grep -a -i -e xembed -e 'tray item' | grep -v 'host portal' | tail -n 25 \
         | while read -r line; do report "MPIREOS_TRAY_LOG journal: $line"; done
     for f in sync chat legacy; do
         tail -n 3 "/tmp/ci-tray-$f.log" 2>/dev/null | while read -r line; do report "MPIREOS_TRAY_LOG $f: $line"; done
