@@ -1,0 +1,65 @@
+name: Promote testing to stable
+
+# Run by a maintainer once a testing build has had its time on real hardware.
+# It copies exactly the packages testers ran (the "repo-testing" release) to
+# the stable channel's repository (the "repo" release), moves stable's Arch
+# snapshot date to testing's, and records that date in channels/stable.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "promote" to publish testing to every stable system
+        required: true
+
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    if: inputs.confirm == 'promote'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the testing repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p promote
+          gh release download repo-testing --dir promote
+          ls -l promote
+          test -f promote/mpire.db || { echo "repo-testing has no mpire.db: nothing to promote"; exit 1; }
+          date="$(tr -d '[:space:]' < promote/testing.channel)"
+          [[ $date =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]] || { echo "bad testing.channel: $date"; exit 1; }
+          printf '%s\n' "$date" > promote/stable.channel
+          echo "SNAPSHOT=$date" >> "$GITHUB_ENV"
+
+      - name: Publish to stable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/publish-repo.sh repo promote stable
+
+      - name: Record the stable snapshot date in channels/stable
+        run: |
+          printf '%s\n' "$SNAPSHOT" > channels/stable
+          git diff --quiet channels/stable && { echo "channels/stable already at $SNAPSHOT"; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Promote testing to stable (Arch snapshot $SNAPSHOT)" channels/stable
+          git push origin HEAD:${{ github.ref_name }} || \
+            echo "::warning::Stable is published, but channels/stable couldn't be pushed. Set it to $SNAPSHOT in a pull request so new ISOs match."
+
+      - name: Summary
+        run: |
+          {
+            echo "### Stable is now testing's build"
+            echo "Arch snapshot: \`$SNAPSHOT\`"
+            echo
+            echo "Packages:"
+            ls promote/*.pkg.tar.zst | xargs -n1 basename | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"

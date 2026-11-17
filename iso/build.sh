@@ -49,8 +49,17 @@ cat "$releng/packages.x86_64" "$repo/iso/packages.x86_64" \
 mpire_repo="$(realpath -m "${MPIRE_REPO_DIR:-$out/repo}")"
 [[ -f $mpire_repo/mpire.db ]] || { echo "no [mpire] repo at $mpire_repo; run scripts/build-packages.sh first" >&2; exit 1; }
 cp "$repo/iso/pacman.conf.in" "$profile/airootfs/etc/pacman.conf"
+if [[ -s $repo/packages/mpire-keyring/mpireos.gpg ]]; then
+    echo "==> Project signing key present: [mpire] requires signatures"
+    sed -i '/^\[mpire\]/,/^\[/{s|^SigLevel = .*|SigLevel = Required|}' "$profile/airootfs/etc/pacman.conf"
+fi
+# Systems installed from a testing ISO stay on testing (see mpire-update --channel).
+if [[ $channel != stable ]]; then
+    mkdir -p "$profile/airootfs/etc/mpireos"
+    echo "$channel" > "$profile/airootfs/etc/mpireos/channel"
+fi
 mirror="Server = https://archive.archlinux.org/repos/$snapshot/\$repo/os/\$arch"
-sed -e "/^\[mpire\]/,/^\[core\]/{s|^SigLevel = .*|SigLevel = Optional TrustAll|;s|^Server = .*|Server = file://$mpire_repo|}" \
+sed -e "/^\[mpire\]/,/^\[core\]/{s|^SigLevel = .*|SigLevel = Optional TrustAll|;s|^Include = .*|Server = file://$mpire_repo|}" \
     -e "s|^Include = /etc/pacman.d/mpire-snapshot|$mirror|" \
     "$repo/iso/pacman.conf.in" > "$profile/pacman.conf"
 

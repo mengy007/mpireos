@@ -341,7 +341,8 @@ class Installer:
         self.write("etc/sudoers.d/10-mpire-wheel", "%wheel ALL=(ALL:ALL) ALL\n", mode=0o440)
 
     def build_initramfs(self):
-        hooks = ["base", "systemd", "autodetect", "microcode", "modconf", "kms",
+        # sd-volatile: snapshots boot read-only with a RAM overlay (systemd.volatile=overlay).
+        hooks = ["base", "systemd", "sd-volatile", "autodetect", "microcode", "modconf", "kms",
                  "keyboard", "sd-vconsole", "block"]
         if self.encrypt:
             hooks.append("sd-encrypt")
@@ -353,6 +354,8 @@ class Installer:
                    'fallback_image="/boot/initramfs-linux-fallback.img"\n'
                    'fallback_options="-S autodetect"\n')
         self.run("sh", "-c", f"genfstab -U {shlex.quote(str(TARGET))} > {shlex.quote(str(TARGET / 'etc/fstab'))}")
+        # Mount subvolumes by name only, so a restored snapshot (mpire-rollback) mounts as @.
+        self.run("sed", "-i", "-E", r"s/,?subvolid=[0-9]+//", str(TARGET / "etc/fstab"))
         self.chroot("mkinitcpio", "-P")
 
     def uuid(self, device: str) -> str:
@@ -406,11 +409,23 @@ class Installer:
 
     def finish(self):
         for unit in ("NetworkManager.service", "systemd-resolved.service", "bluetooth.service",
-                     "fstrim.timer", "snapper-cleanup.timer", "grub-btrfsd.service",
+                     "fstrim.timer", "snapper-cleanup.timer",
                      "sddm.service", "mpire-update.timer"):
             self.chroot("systemctl", "enable", unit, check=False)
         self.chroot("systemctl", "set-default", "graphical.target")
+        # Also writes the "MpireOS snapshots" menu (41_mpire_snapshots, from mpire-base).
         self.chroot("grub-mkconfig", "-o", "/boot/grub/grub.cfg")
+        if not self.dry_run:
+            ids = re.findall(r"--id (mpireos-snapshot-\d+)", (TARGET / "boot/grub/grub.cfg").read_text())
+            entries = len(ids)
+            self.emit(event="info", message=f"snapshot boot entries: {entries}")
+            if entries == 0 and self.plan.get("ci"):
+                raise InstallError("the boot menu has no snapshot entries")
+            if self.plan.get("ci"):
+                # CI boots the newest snapshot ("Fresh install") once (next_entry is one-shot),
+                # then the system itself; see scripts/install-test.sh.
+                self.chroot("grub-editenv", "/boot/grub/grubenv", "set",
+                            f"next_entry=mpireos-snapshots>{ids[0]}")
         if not self.dry_run and LOG_PATH.exists():
             self.log.flush()
             shutil.copy(LOG_PATH, TARGET / "var/log/mpire-install.log")

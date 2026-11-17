@@ -19,7 +19,9 @@ cp -a "$repo/packages/." "$work/"
 # Packages built from this repository's sources get a copy of them.
 cp -a "$repo/installer" "$work/mpire-setup/installer"
 cp -a "$repo/desktop" "$work/mpire-desktop/desktop"
-tr -d '[:space:]' < "$repo/channels/$channel" > "$work/mpire-base/snapshot"
+# The same package files are promoted from testing to stable, so they carry
+# stable's defaults; mpire-update moves each system to its own channel.
+tr -d '[:space:]' < "$repo/channels/stable" > "$work/mpire-base/snapshot"
 chown -R builder: "$work"
 
 sign=()
@@ -28,6 +30,10 @@ if [[ -n ${MPIRE_SIGNING_KEY:-} ]]; then
     key="$(sudo -u builder gpg --batch --list-secret-keys --with-colons | awk -F: '/^fpr/ {print $10; exit}')"
     sign=(--sign --key "$key")
     echo "==> Signing with $key"
+elif [[ ${REQUIRE_SIGNING:-} == true && -s $repo/packages/mpire-keyring/mpireos.gpg ]]; then
+    # Systems trusting the project key would refuse unsigned packages.
+    echo "==> MPIRE_SIGNING_KEY is not set, but mpire-keyring has a project key: refusing to build unsigned packages for publishing" >&2
+    exit 1
 else
     echo "==> MPIRE_SIGNING_KEY not set: building unsigned packages"
 fi

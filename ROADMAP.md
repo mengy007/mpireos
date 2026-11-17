@@ -19,8 +19,8 @@ Goal: a developer ISO that boots in a VM and on common hardware, and installs to
 - [ ] archiso profile in `iso/`, built by GitHub Actions on every push to `main`
 - [ ] Package build pipeline for MpireOS's own packages in `packages/`
 - [ ] Signed `mpire` package repository with the project's signing key
-- [ ] `testing` and `stable` channels pinned to dated Arch snapshots
-- [ ] Btrfs subvolume layout, snapper, snap-pac, and grub-btrfs for rollback
+- [x] `testing` and `stable` channels pinned to dated Arch snapshots
+- [x] Btrfs subvolume layout, snapper, snap-pac, and a snapshot boot menu with `mpire-rollback`
 - [ ] Plasma (Wayland) live session as development scaffolding
 - [ ] Mpire Setup: the MpireOS graphical installer (welcome, where to install, about you, review), with erase-disk, encryption, and dual boot
 - [ ] Unattended install mode used by CI to test every ISO

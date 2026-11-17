@@ -1,8 +1,9 @@
 # MpireOS pacman configuration.
 #
-# [mpire] holds MpireOS's own packages. [core] and [extra] come from a dated Arch
-# Linux snapshot chosen by the release channel (/etc/pacman.d/mpire-snapshot,
-# managed by mpire-update), not from live Arch mirrors.
+# [mpire] holds MpireOS's own packages, from the release channel's repository
+# (/etc/pacman.d/mpire-repo). [core] and [extra] come from a dated Arch Linux
+# snapshot chosen by the channel (/etc/pacman.d/mpire-snapshot), not from live
+# Arch mirrors. mpire-update manages both files.
 
 [options]
 HoldPkg     = pacman glibc
@@ -13,9 +14,10 @@ SigLevel    = Required DatabaseOptional
 LocalFileSigLevel = Optional
 
 [mpire]
-# TODO: switch to "Required" once the project signing key exists (packages/mpire-keyring).
+# Becomes "Required" by itself once the project signing key ships in mpire-keyring
+# (iso/build.sh for new installs, mpire-base's upgrade step for existing ones).
 SigLevel = Optional TrustedOnly
-Server = https://github.com/mengy007/mpireos/releases/download/repo
+Include = /etc/pacman.d/mpire-repo
 
 [core]
 Include = /etc/pacman.d/mpire-snapshot

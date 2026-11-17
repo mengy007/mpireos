@@ -1,3 +1,2 @@
 enable mpire-update.timer
-enable grub-btrfsd.service
 enable snapper-cleanup.timer

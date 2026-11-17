@@ -65,18 +65,39 @@ grep -a "MPIREOS_INSTALL {" "$install_log" | sed 's/^.*MPIREOS_INSTALL /  /' || 
 for _ in $(seq 1 60); do kill -0 $qemu 2>/dev/null || break; sleep 2; done
 kill $qemu 2>/dev/null || true
 
-echo "==> Phase 2: boot the installed system"
-: > "$boot_log"
+# The installer (CI plan) asks GRUB to boot the "Fresh install" snapshot once,
+# so the first boot goes through the snapshot boot menu and the second boots
+# the installed system itself.
 monitor="$work/monitor.sock"
-qemu-system-x86_64 "${common[@]}" -serial "file:$boot_log" -monitor "unix:$monitor,server,nowait" &
-qemu=$!
-trap 'kill $qemu 2>/dev/null || true' EXIT
 source "$(dirname "$0")/qemu-screenshot.sh"
 shot="$(realpath -m "${SCREENSHOT:-login-screen.ppm}")"
-if ! wait_for "$boot_log" MPIREOS_GREETER_OK "MPIREOS_DESKTOP_FAIL|MPIREOS_GREETER_FAIL" $qemu; then
-    qemu_screenshot "$monitor" "$shot"
-    exit 1
-fi
-grep -a MPIREOS_GREETER_LOG "$boot_log" || true
-qemu_screenshot "$monitor" "$shot"
+boot_installed() {  # log screenshot expected-root
+    local log="$1" png="$2" root="$3"
+    : > "$log"
+    rm -f "$monitor"
+    qemu-system-x86_64 "${common[@]}" -serial "file:$log" -monitor "unix:$monitor,server,nowait" &
+    qemu=$!
+    trap 'kill $qemu 2>/dev/null || true' EXIT
+    if ! wait_for "$log" MPIREOS_GREETER_OK "MPIREOS_DESKTOP_FAIL|MPIREOS_GREETER_FAIL" $qemu; then
+        qemu_screenshot "$monitor" "$png"
+        exit 1
+    fi
+    grep -a MPIREOS_GREETER_LOG "$log" || true
+    qemu_screenshot "$monitor" "$png"
+    local got; got="$(grep -a -o 'MPIREOS_ROOT [a-z0-9 ]*' "$log" | head -n 1)"
+    echo "  ${got:-MPIREOS_ROOT missing}"
+    if ! [[ $got =~ ^MPIREOS_ROOT\ $root ]]; then
+        echo "FAIL: expected to boot $root"
+        exit 1
+    fi
+    kill $qemu 2>/dev/null || true
+    wait $qemu 2>/dev/null || true
+}
+
+echo "==> Phase 2: boot the Fresh install snapshot from the MpireOS snapshots menu"
+boot_installed "${boot_log/serial/snapshot-serial}" "${shot%.ppm}-snapshot.ppm" "snapshot [0-9]+ overlay"
+echo "PASS: the snapshot boots read-only with an overlay, to the login screen"
+
+echo "==> Phase 3: boot the installed system"
+boot_installed "$boot_log" "$shot" "system btrfs"
 echo "PASS: installed system boots to the MpireOS login screen"

@@ -34,10 +34,12 @@ jobs:
       - name: Build packages and ISO in an Arch Linux container
         env:
           MPIRE_SIGNING_KEY: ${{ secrets.MPIRE_SIGNING_KEY }}
+          # Packages built for publishing must be signed once the project key exists.
+          REQUIRE_SIGNING: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           docker run --rm --privileged \
             -v "$PWD:/src" -w /src \
-            -e MPIRE_SIGNING_KEY \
+            -e MPIRE_SIGNING_KEY -e REQUIRE_SIGNING \
             archlinux:latest \
             bash -c "pacman -Syu --noconfirm --needed archiso base-devel \
               && ./scripts/build-packages.sh /src/out/repo '${{ inputs.channel || 'stable' }}' \
@@ -76,13 +78,10 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      # Installed systems update from this release (see mpire-update). Only main publishes.
-      - name: Publish the [mpire] package repository
+      # Every tested build on main goes to the testing channel's repository.
+      # Stable only changes through the "Promote testing to stable" workflow.
+      - name: Publish the [mpire] package repository (testing channel)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release view repo >/dev/null 2>&1 || \
-            gh release create repo --title "MpireOS package repository" \
-              --notes "Packages and channel snapshot dates used by installed MpireOS systems. Updated by CI on every push to main."
-          gh release upload repo out/repo/* --clobber
+        run: scripts/publish-repo.sh repo-testing out/repo testing

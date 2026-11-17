@@ -1,0 +1,42 @@
+#!/bin/bash
+# Run by pacman before a kernel is upgraded or removed. /boot (the EFI
+# partition) is not part of Btrfs snapshots, so keep a copy of the outgoing
+# kernel and its initramfs in /boot/mpire-kernels/<version>/. That keeps
+# snapshots taken with this kernel bootable from the "MpireOS snapshots" menu.
+# mpire-boot-menu removes copies that no snapshot needs any more.
+set -u
+
+# Whether two files have the same contents (coreutils only; cmp may be missing).
+same() { [[ -f $1 && -f $2 && $(sha256sum < "$1") == "$(sha256sum < "$2")" ]]; }
+keep=/boot/mpire-kernels
+grep -q 'mpire\.snapshot=' /proc/cmdline && exit 0
+
+for dir in /usr/lib/modules/*/; do
+    [[ -f $dir/vmlinuz && -f $dir/pkgbase ]] || continue
+    pkgbase="$(<"$dir/pkgbase")"
+    kver="$(basename "$dir")"
+    kernel="/boot/vmlinuz-$pkgbase"
+    initrd="/boot/initramfs-$pkgbase.img"
+    [[ -f $kernel && -f $initrd ]] || continue
+    [[ -f $keep/$kver/vmlinuz ]] && continue
+    # Only if /boot really holds this version.
+    same "$dir/vmlinuz" "$kernel" || continue
+
+    need=$(( ($(stat -c %s "$kernel") + $(stat -c %s "$initrd")) / 1024 + 65536 ))
+    free=$(df -Pk /boot | awk 'NR == 2 {print $4}')
+    if (( free < need )); then
+        echo "mpire-keep-kernel: not enough room in /boot to keep $kver; older snapshots won't be bootable" >&2
+        continue
+    fi
+    mkdir -p "$keep/$kver.tmp"
+    if cp "$kernel" "$keep/$kver.tmp/vmlinuz" && cp "$initrd" "$keep/$kver.tmp/initramfs.img"; then
+        echo "$pkgbase" > "$keep/$kver.tmp/pkgbase"
+        sync -f "$keep/$kver.tmp/initramfs.img" 2>/dev/null || true
+        mv "$keep/$kver.tmp" "$keep/$kver"
+        echo "mpire-keep-kernel: kept $pkgbase $kver for snapshots"
+    else
+        rm -rf "$keep/$kver.tmp"
+        echo "mpire-keep-kernel: couldn't keep $kver" >&2
+    fi
+done
+exit 0

@@ -1,0 +1,147 @@
+#!/bin/bash
+# mpire-rollback: make a Btrfs snapshot the running MpireOS system again.
+#
+# The usual way: restart, open "MpireOS snapshots" in the boot menu, start the
+# snapshot from before the problem, check that things work, then run
+# `sudo mpire-rollback`. It keeps the snapshot you booted. You can also name a
+# snapshot number from `mpire-rollback --list`.
+#
+# What it does: the current system subvolume (@) is renamed to
+# @before-rollback-<date> (nothing is deleted), a writable copy of the snapshot
+# becomes the new @, and its kernel is put back in /boot. Restart to finish.
+set -euo pipefail
+
+# Whether two files have the same contents (coreutils only; cmp may be missing).
+same() { [[ -f $1 && -f $2 && $(sha256sum < "$1") == "$(sha256sum < "$2")" ]]; }
+
+SNAPDIR=/.snapshots
+KEEP=/boot/mpire-kernels
+
+log() { echo "mpire-rollback: $*"; }
+die() { echo "mpire-rollback: $*" >&2; exit 1; }
+
+usage() {
+    cat <<USAGE
+Usage: mpire-rollback [--yes] [NUMBER]
+       mpire-rollback --list
+
+  (no number)  Keep the snapshot this computer was started from
+  NUMBER       Go back to that snapshot instead
+  --list       Show snapshots you can go back to
+  --yes        Don't ask first
+USAGE
+}
+
+xml() { sed -n "s|.*<$1>\\(.*\\)</$1>.*|\\1|p" "$2" | head -n 1; }
+
+list() {
+    printf '%-6s %-22s %s\n' "Number" "Taken" "What"
+    for num in $(ls -1 "$SNAPDIR" 2>/dev/null | grep -E '^[0-9]+$' | sort -rn); do
+        info="$SNAPDIR/$num/info.xml"
+        [[ -f $info ]] || continue
+        [[ $(xml type "$info") == post ]] && continue
+        when="$(date -d "$(xml date "$info") UTC" '+%Y-%m-%d %H:%M' 2>/dev/null || xml date "$info")"
+        printf '%-6s %-22s %s\n' "$num" "$when" "$(xml description "$info")"
+    done
+}
+
+num=""
+yes=no
+for arg in "$@"; do
+    case "$arg" in
+        --list) list; exit 0 ;;
+        --yes|-y) yes=yes ;;
+        -h|--help) usage; exit 0 ;;
+        [0-9]*) num="$arg" ;;
+        *) usage >&2; exit 2 ;;
+    esac
+done
+
+[[ $EUID -eq 0 ]] || exec sudo "$0" "$@"
+
+booted="$(grep -o 'mpire\.snapshot=[0-9]*' /proc/cmdline | cut -d= -f2 || true)"
+num="${num:-$booted}"
+[[ -n $num ]] || die "this computer wasn't started from a snapshot. Pick one: mpire-rollback --list, then mpire-rollback NUMBER"
+[[ $num =~ ^[0-9]+$ ]] || die "not a snapshot number: $num"
+
+# The Btrfs device and where the snapshots live on it.
+source="$(findmnt -no SOURCE "$SNAPDIR")" || die "$SNAPDIR is not mounted"
+device="${source%%\[*}"
+snaps_subvol="$(findmnt -no FSROOT "$SNAPDIR" | sed 's|^/||')"
+[[ -n $device && -n $snaps_subvol ]] || die "can't find the snapshot volume"
+
+info="$SNAPDIR/$num/info.xml"
+[[ -f $info && -d $SNAPDIR/$num/snapshot/usr ]] || die "snapshot $num doesn't exist"
+desc="$(xml description "$info")"
+when="$(date -d "$(xml date "$info") UTC" '+%b %-d, %Y %-I:%M %p' 2>/dev/null || xml date "$info")"
+
+# Kernels: every kernel package in the snapshot needs its own kernel in /boot,
+# either the one there now or a kept copy.
+declare -A restore=()
+for dir in "$SNAPDIR/$num/snapshot"/usr/lib/modules/*/; do
+    [[ -f $dir/pkgbase && -f $dir/vmlinuz ]] || continue
+    pkgbase="$(<"$dir/pkgbase")"
+    kver="$(basename "$dir")"
+    if same "$dir/vmlinuz" "/boot/vmlinuz-$pkgbase"; then
+        continue
+    elif [[ -f $KEEP/$kver/vmlinuz && -f $KEEP/$kver/initramfs.img ]]; then
+        restore[$pkgbase]="$kver"
+    else
+        die "snapshot $num needs kernel $kver, which wasn't kept. Pick a newer snapshot (mpire-rollback --list)."
+    fi
+done
+
+echo "Going back to snapshot $num ($desc, $when)."
+echo "Your files in /home are not affected. The current system is kept as a backup."
+if [[ $yes != yes ]]; then
+    read -r -p "Continue? [y/N] " answer
+    [[ ${answer,,} == y* ]] || exit 0
+fi
+
+top="$(mktemp -d /run/mpire-rollback.XXXXXX)"
+trap 'umount "$top" 2>/dev/null; rmdir "$top" 2>/dev/null' EXIT
+mount -o subvolid=5 "$device" "$top"
+[[ -d $top/@ && -d $top/$snaps_subvol/$num/snapshot ]] || die "unexpected Btrfs layout on $device"
+
+backup="@before-rollback-$(date +%Y%m%d-%H%M%S)"
+log "keeping the current system as $backup"
+mv "$top/@" "$top/$backup"
+if ! btrfs subvolume snapshot "$top/$snaps_subvol/$num/snapshot" "$top/@" >/dev/null; then
+    mv "$top/$backup" "$top/@"
+    die "couldn't copy snapshot $num; nothing was changed"
+fi
+
+# Mount by subvolume name only, so the new @ (a new subvolume id) mounts.
+sed -i -E 's/,?subvolid=[0-9]+//' "$top/@/etc/fstab"
+
+for pkgbase in "${!restore[@]}"; do
+    kver="${restore[$pkgbase]}"
+    log "putting back $pkgbase $kver"
+    cp "$KEEP/$kver/vmlinuz" "/boot/vmlinuz-$pkgbase"
+    cp "$KEEP/$kver/initramfs.img" "/boot/initramfs-$pkgbase.img"
+done
+
+# On the next start: rebuild the initramfs images (the fallback ones too) and
+# the boot menu from the restored system, then remove this one-off unit.
+mkdir -p "$top/@/etc/systemd/system/multi-user.target.wants"
+cat > "$top/@/etc/systemd/system/mpire-rollback-finish.service" <<'UNIT'
+[Unit]
+Description=Finish going back to an MpireOS snapshot
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=-/usr/bin/mkinitcpio -P
+ExecStart=-/usr/bin/grub-mkconfig -o /boot/grub/grub.cfg
+ExecStart=/usr/bin/rm -f /etc/systemd/system/mpire-rollback-finish.service /etc/systemd/system/multi-user.target.wants/mpire-rollback-finish.service
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+ln -sf ../mpire-rollback-finish.service "$top/@/etc/systemd/system/multi-user.target.wants/mpire-rollback-finish.service"
+sync
+
+echo
+log "done. Restart to use the restored system."
+log "the previous system is kept as the Btrfs subvolume $backup; delete it once you're happy:"
+log "  sudo mount -o subvolid=5 $device /mnt && sudo btrfs subvolume delete /mnt/$backup && sudo umount /mnt"
