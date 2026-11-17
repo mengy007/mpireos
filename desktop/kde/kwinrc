@@ -13,3 +13,7 @@ contrastEnabled=true
 
 [Windows]
 BorderlessMaximizedWindows=false
+
+# Tapping Meta opens MpireOS's launcher (mpire-shell), not Plasma's menu.
+[ModifierOnlyShortcuts]
+Meta=org.mpireos.Shell,/org/mpireos/Shell,org.mpireos.Shell,ToggleLauncher

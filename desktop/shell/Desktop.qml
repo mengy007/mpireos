@@ -15,7 +15,7 @@ Item {
 
     // Greeting
     ColumnLayout {
-        x: 52; y: 44 + 34
+        x: 52; y: Theme.topBarHeight + 34
         spacing: 8
         Overline { text: Qt.formatDate(desktop.now, "dddd, MMMM d") }
         RowLayout {
@@ -29,7 +29,7 @@ Item {
     RowLayout {
         anchors.right: parent.right
         anchors.rightMargin: 52
-        y: 44 + 30
+        y: Theme.topBarHeight + 30
         spacing: 26
         Repeater {
             model: [{ icon: "folder", label: qsTr("My files") }, { icon: "image", label: qsTr("Wallpapers") }]
@@ -50,7 +50,7 @@ Item {
     ColumnLayout {
         anchors.right: parent.right
         anchors.rightMargin: 40
-        y: 44 + 112
+        y: Theme.topBarHeight + 112
         spacing: 16
         TodayWidget { now: desktop.now }
         FocusWidget {}
@@ -75,28 +75,7 @@ Item {
     Dock {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 24
+        anchors.bottomMargin: 10
         now: desktop.now
-    }
-
-    // Bottom corners
-    RowLayout {
-        anchors { left: parent.left; bottom: parent.bottom; leftMargin: 52; bottomMargin: 34 }
-        spacing: 10
-        Mark { size: 14 }
-        Overline { text: "MpireOS" }
-        Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 12; color: Theme.border }
-        Label { role: "small"; secondary: true; text: qsTr("Thoughtfully yours."); font.pixelSize: 11 }
-    }
-    RowLayout {
-        anchors { right: parent.right; bottom: parent.bottom; rightMargin: 46; bottomMargin: 30 }
-        spacing: 8
-        Icon { name: "search"; size: 14 }
-        Label { role: "small"; secondary: true; text: qsTr("Find your flow"); font.pixelSize: 11 }
-        Rectangle {
-            implicitWidth: kbd.implicitWidth + 12; implicitHeight: 20; radius: 5
-            color: "transparent"; border.color: Theme.border
-            Label { id: kbd; anchors.centerIn: parent; role: "small"; secondary: true; text: "Super Space"; font.pixelSize: 10 }
-        }
     }
 }

@@ -9,6 +9,7 @@ timeout="${2:-1200}"
 log="${SERIAL_LOG:-serial.log}"
 shot="$(realpath -m "${SCREENSHOT:-live-desktop.ppm}")"
 monitor="$(mktemp -u /tmp/qemu-monitor.XXXXXX)"
+qmp="$(mktemp -u /tmp/qemu-qmp.XXXXXX)"
 : > "$log"
 
 accel=(-accel tcg)
@@ -19,7 +20,9 @@ qemu-system-x86_64 "${accel[@]}" -m 4096 -smp 2 \
     -vga std -display none \
     -serial "file:$log" \
     -monitor "unix:$monitor,server,nowait" \
+    -qmp "unix:$qmp,server,nowait" \
     -fw_cfg name=opt/mpireos/ci,string=1 \
+    -usb -device usb-tablet \
     -nic user,model=virtio-net-pci &
 qemu=$!
 trap 'kill $qemu 2>/dev/null || true' EXIT
@@ -43,6 +46,35 @@ for ((t = 0; t < timeout; t += 5)); do
         done
         grep -a MPIREOS_APP "$log" || true
         qemu_screenshot "$monitor" "${shot%.ppm}-app.ppm"
+        # Then the boot check shows a notification, quick settings, and the
+        # notification list; each gets a screenshot. Finally the launcher, opened
+        # with Alt+Space (the real shortcut), and a search typed into it.
+        wait_for() {
+            for ((w = 0; w < 90; w += 2)); do grep -q "$1" "$log" && return 0; sleep 2; done
+            echo "note: $1 not seen"; return 1
+        }
+        wait_for MPIREOS_NOTIFY_SHOWN && qemu_screenshot "$monitor" "${shot%.ppm}-notify.ppm"
+        wait_for MPIREOS_QUICK_SHOWN && { sleep 2; qemu_screenshot "$monitor" "${shot%.ppm}-quick.ppm"; }
+        wait_for MPIREOS_CENTER_SHOWN && { sleep 2; qemu_screenshot "$monitor" "${shot%.ppm}-center.ppm"; }
+        if wait_for MPIREOS_PANELS_DONE; then
+            sleep 3
+            qemu_key "$monitor" alt-spc
+            sleep 3
+            qemu_screenshot "$monitor" "${shot%.ppm}-launcher.ppm"
+            for k in s e t t; do qemu_key "$monitor" "$k"; sleep 0.3; done
+            sleep 2
+            qemu_screenshot "$monitor" "${shot%.ppm}-search.ppm"
+            qemu_key "$monitor" esc
+        fi
+        # The dock hides itself; pushing the pointer against the bottom edge brings it back.
+        sleep 3
+        qemu_screenshot "$monitor" "${shot%.ppm}-dock-hidden.ppm"
+        # usb-tablet is absolute (0-32767 on each axis): bottom center of the screen.
+        qemu_pointer "$qmp" 16384 30000
+        qemu_pointer "$qmp" 16384 32767
+        sleep 2
+        qemu_screenshot "$monitor" "${shot%.ppm}-dock-shown.ppm"
+        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT "$log" || true
         exit 0
     fi
     if grep -q -e MPIREOS_DESKTOP_FAIL -e MPIREOS_SETUP_FAIL "$log"; then
