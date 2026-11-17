@@ -11,8 +11,9 @@ Item {
     implicitWidth: row.implicitWidth + 28
     implicitHeight: 72
 
-    // Asks the shell to run a command (an app, or the app search).
+    // Asks the shell to run a command, or to open the launcher.
     signal launch(string command)
+    signal openLauncher()
 
     component Divider: Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 36; color: Theme.border }
 
@@ -21,7 +22,7 @@ Item {
         anchors.centerIn: parent
         spacing: 12
 
-        AppIcon { glyph: "grid"; glyphColor: Theme.textSecondary; command: "krunner"; onClicked: dock.launch(command) }
+        AppIcon { glyph: "grid"; glyphColor: Theme.textSecondary; onClicked: dock.openLauncher() }
         Divider {}
         AppIcon { glyph: "folder"; topColor: "#B5CDEE"; bottomColor: "#83A9D8"; glyphColor: "white"; command: "dolphin"; onClicked: dock.launch(command) }
         AppIcon { glyph: "globe"; topColor: "#BFE3DA"; bottomColor: "#8CCBBB"; glyphColor: "white"; command: "firefox"; onClicked: dock.launch(command) }

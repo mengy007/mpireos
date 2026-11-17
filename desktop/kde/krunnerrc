@@ -1,4 +1,0 @@
-# Until MpireOS's own launcher replaces KRunner: open it centered, like a spotlight.
-[General]
-FreeFloating=true
-ActivateWhenTypingOnDesktop=false

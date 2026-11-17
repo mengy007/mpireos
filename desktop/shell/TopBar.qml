@@ -4,18 +4,21 @@ import MpireOS.Style
 
 // The frosted top bar: mark and app menus, workspace pill, status tray, clock.
 // Parts with nothing real to show stay hidden: no app name or menus until the
-// shell tracks the active window, no battery on desktops, no bell until
-// notifications exist.
+// shell tracks the active window, no battery on desktops.
 Rectangle {
     id: bar
     property string appName: ""
     property var menus: []
     property string workspace: ""
     property int battery: -1               // percent, or -1 when there is no battery
-    property bool showNotifications: false
+    property bool showNotifications: true
+    property int unread: 0                  // dot on the bell
+    property bool online: true              // dims the network icon when offline
+    property bool wired: false
     property date now: new Date()
 
     signal searchClicked()
+    signal notificationsClicked()
     signal networkClicked()
     signal settingsClicked()
 
@@ -29,7 +32,7 @@ Rectangle {
 
     implicitHeight: 44
     color: Theme.chrome
-    Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: "#80FFFFFF" }
+    Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Theme.divider }
 
     RowLayout {
         anchors.fill: parent
@@ -99,8 +102,19 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 18
         TrayIcon { name: "search"; onClicked: bar.searchClicked() }
-        TrayIcon { name: "bell"; visible: bar.showNotifications }
-        TrayIcon { name: "wifi"; onClicked: bar.networkClicked() }
+        TrayIcon {
+            name: "bell"
+            visible: bar.showNotifications
+            onClicked: bar.notificationsClicked()
+            Rectangle {
+                visible: bar.unread > 0
+                anchors { right: parent.right; top: parent.top; rightMargin: -1; topMargin: -1 }
+                width: 8; height: 8; radius: 4
+                color: Theme.accent
+                border.color: "white"
+            }
+        }
+        TrayIcon { name: bar.wired ? "ethernet" : bar.online ? "wifi" : "wifiOff"; opacity: bar.online ? 1 : 0.55; onClicked: bar.networkClicked() }
         TrayIcon { name: "sliders"; onClicked: bar.settingsClicked() }
         RowLayout {
             visible: bar.battery >= 0
