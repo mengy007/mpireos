@@ -75,7 +75,7 @@ Item {
     Dock {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 16
+        anchors.bottomMargin: 10
         now: desktop.now
     }
 }

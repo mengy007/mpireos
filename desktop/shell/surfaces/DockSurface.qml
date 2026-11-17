@@ -10,7 +10,7 @@ import ".."
 Item {
     id: surface
     property bool revealed: true          // shown for a moment at login, then hides
-    readonly property int margin: 16      // space under the dock when it is up
+    readonly property int margin: 10      // space under the dock when it is up
     property date now: new Date()
 
     implicitWidth: dock.implicitWidth
