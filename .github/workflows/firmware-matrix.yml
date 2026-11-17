@@ -6,6 +6,11 @@ name: Firmware boot matrix
 # Build ISO runs the same matrix on every new image.
 
 on:
+  # Temporary: lets a branch test the ISO from Build ISO run 44009501428
+  # (main, 2026-11-17) before this workflow exists on main.
+  push:
+    branches: [claude/project-thread-vjgl62]
+    paths: [.github/workflows/firmware-matrix.yml, scripts/firmware-matrix.sh]
   workflow_dispatch:
     inputs:
       run_id:
@@ -29,7 +34,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: mpireos-iso
-          run-id: ${{ inputs.run_id }}
+          run-id: ${{ inputs.run_id || '44009501428' }}
           github-token: ${{ github.token }}
           path: out
 
