@@ -416,15 +416,16 @@ class Installer:
         # Also writes the "MpireOS snapshots" menu (41_mpire_snapshots, from mpire-base).
         self.chroot("grub-mkconfig", "-o", "/boot/grub/grub.cfg")
         if not self.dry_run:
-            entries = (TARGET / "boot/grub/grub.cfg").read_text().count("--id mpireos-snapshot-")
+            ids = re.findall(r"--id (mpireos-snapshot-\d+)", (TARGET / "boot/grub/grub.cfg").read_text())
+            entries = len(ids)
             self.emit(event="info", message=f"snapshot boot entries: {entries}")
             if entries == 0 and self.plan.get("ci"):
                 raise InstallError("the boot menu has no snapshot entries")
             if self.plan.get("ci"):
-                # CI boots the "Fresh install" snapshot once (next_entry is one-shot),
+                # CI boots the newest snapshot ("Fresh install") once (next_entry is one-shot),
                 # then the system itself; see scripts/install-test.sh.
                 self.chroot("grub-editenv", "/boot/grub/grubenv", "set",
-                            "next_entry=mpireos-snapshots>mpireos-snapshot-1")
+                            f"next_entry=mpireos-snapshots>{ids[0]}")
         if not self.dry_run and LOG_PATH.exists():
             self.log.flush()
             shutil.copy(LOG_PATH, TARGET / "var/log/mpire-install.log")

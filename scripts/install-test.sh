@@ -86,7 +86,7 @@ boot_installed() {  # log screenshot expected-root
     qemu_screenshot "$monitor" "$png"
     local got; got="$(grep -a -o 'MPIREOS_ROOT [a-z0-9 ]*' "$log" | head -n 1)"
     echo "  ${got:-MPIREOS_ROOT missing}"
-    if [[ $got != "MPIREOS_ROOT $root"* ]]; then
+    if ! [[ $got =~ ^MPIREOS_ROOT\ $root ]]; then
         echo "FAIL: expected to boot $root"
         exit 1
     fi
@@ -95,7 +95,7 @@ boot_installed() {  # log screenshot expected-root
 }
 
 echo "==> Phase 2: boot the Fresh install snapshot from the MpireOS snapshots menu"
-boot_installed "${boot_log/serial/snapshot-serial}" "${shot%.ppm}-snapshot.ppm" "snapshot 1 overlay"
+boot_installed "${boot_log/serial/snapshot-serial}" "${shot%.ppm}-snapshot.ppm" "snapshot [0-9]+ overlay"
 echo "PASS: the snapshot boots read-only with an overlay, to the login screen"
 
 echo "==> Phase 3: boot the installed system"
