@@ -5,20 +5,28 @@
 #pragma once
 
 #include <QObject>
+#include <QPointF>
 #include <QString>
 
 class ShellApi : public QObject
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.mpireos.Shell")
-    // The open panel: "" (none), "launcher", "quick-settings", or "notifications".
+    // The open panel: "" (none), "launcher", "quick-settings", "notifications",
+    // "desktop-menu" (right-click on the desktop), or "wallpaper" (the picker).
     Q_PROPERTY(QString panel READ panel WRITE setPanel NOTIFY panelChanged)
+    // Where the desktop menu opens (screen coordinates of the right-click).
+    Q_PROPERTY(QPointF menuPosition READ menuPosition NOTIFY panelChanged)
 
 public:
     explicit ShellApi(QObject *parent = nullptr);
 
     QString panel() const { return m_panel; }
     void setPanel(const QString &panel);
+    QPointF menuPosition() const { return m_menuPosition; }
+
+    // Right-click on the desktop: opens the desktop menu at x, y.
+    Q_INVOKABLE void openDesktopMenu(qreal x, qreal y);
 
     // Runs a command line such as "kcmshell6 kcm_networkmanagement", detached.
     Q_INVOKABLE void launch(const QString &command);
@@ -39,4 +47,5 @@ signals:
 
 private:
     QString m_panel;
+    QPointF m_menuPosition{-1, -1};      // -1: centered (opened from a script)
 };

@@ -38,6 +38,11 @@ var paths = {
     bellOff: "<path d='M8.5 4.2A6 6 0 0 1 18 9c0 3 .6 5 1.3 6.3M17 17H3.5S6 15 6 9c0-.5 0-1 .2-1.5'/><path d='M10.3 20.5a2 2 0 0 0 3.4 0'/><path d='M3.5 3.5l17 17'/>",
     calculator: "<rect x='5' y='3' width='14' height='18' rx='2.5'/><path d='M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01'/>",
     chevronRight: "<path d='M10 7l5 5-5 5'/>",
+    monitor: "<rect x='3' y='4.5' width='18' height='12' rx='2.5'/><path d='M9 20h6M12 16.5V20'/>",
+    dock: "<rect x='3.5' y='4' width='17' height='16' rx='3'/><rect x='7' y='14.5' width='10' height='2.5' rx='1.25'/>",
+    plus: "<path d='M12 5.5v13M5.5 12h13'/>",
+    check: "<path d='M5.5 12.5l4 4 9-9'/>",
+    palette: "<path d='M12 3.5a8.5 8.5 0 0 0 0 17c1.3 0 2-.8 2-1.8 0-1.3-1.1-1.6-1.1-2.7 0-1 .8-1.6 1.8-1.6h2.2a3.6 3.6 0 0 0 3.6-3.6C20.5 6.9 16.7 3.5 12 3.5z'/><circle cx='7.8' cy='11' r='1.1'/><circle cx='10.5' cy='7.4' r='1.1'/><circle cx='15' cy='7.6' r='1.1'/>",
     ethernet: "<rect x='4' y='5' width='16' height='11' rx='2'/><path d='M8 16v3h8v-3M8 9v2.5M11 9v2.5M14 9v2.5'/>"
 };
 

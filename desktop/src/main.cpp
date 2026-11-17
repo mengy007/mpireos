@@ -18,6 +18,7 @@
 #include <LayerShellQt/Window>
 
 #include "apps.h"
+#include "desktopsettings.h"
 #include "iconprovider.h"
 #include "notifications.h"
 #include "shellapi.h"
@@ -107,6 +108,7 @@ int main(int argc, char *argv[])
     AppIndex apps;
     NotificationServer notifications;
     SystemStatus status;
+    DesktopSettings desktopSettings;
 
     QDBusConnection bus = QDBusConnection::sessionBus();
     if (!bus.registerObject(QString::fromLatin1(kPath), &api, QDBusConnection::ExportScriptableSlots)
@@ -121,12 +123,14 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("appIndex"), &apps);
     engine.rootContext()->setContextProperty(QStringLiteral("notifications"), &notifications);
     engine.rootContext()->setContextProperty(QStringLiteral("systemStatus"), &status);
+    engine.rootContext()->setContextProperty(QStringLiteral("desktopSettings"), &desktopSettings);
 
     QScreen *screen = QGuiApplication::primaryScreen();
     const QSize size = screen->size();
     const auto allEdges = Window::Anchors(Window::AnchorTop | Window::AnchorBottom | Window::AnchorLeft | Window::AnchorRight);
 
-    // Desktop: wallpaper and widgets, under every window, ignoring other surfaces' zones.
+    // Desktop: the wallpaper, under every window, ignoring other surfaces' zones.
+    // Right-clicking it opens the desktop menu (a panel, below).
     QQuickView *background = makeSurface(&engine, QStringLiteral("surfaces/BackgroundSurface.qml"), screen);
     Window *bg = layer(background, Window::LayerBackground, allEdges, QStringLiteral("mpire-desktop"));
     bg->setExclusiveZone(-1);
@@ -142,16 +146,21 @@ int main(int argc, char *argv[])
     topBar->resize(size.width(), kTopBarHeight);
     topBar->show();
 
-    // Dock: centered at the bottom; hides itself and slides up when the pointer
-    // reaches the bottom edge (DockSurface.qml). It reserves no space, so
-    // maximized windows use the full height.
+    // Dock: centered at the bottom; by default it hides itself and slides up
+    // when the pointer reaches the bottom edge (DockSurface.qml) and reserves
+    // no space, so maximized windows use the full height. With auto-hide off
+    // (desktop menu), it stays up and windows keep clear of it.
     QQuickView *dock = makeSurface(&engine, QStringLiteral("surfaces/DockSurface.qml"), screen);
     QQuickItem *dockItem = dock->rootObject();
     Window *dk = layer(dock, Window::LayerTop,
                        Window::Anchors(Window::AnchorBottom | Window::AnchorLeft | Window::AnchorRight),
                        QStringLiteral("mpire-dock"));
-    dk->setExclusiveZone(0);
     dock->resize(size.width(), int(dockItem->implicitHeight()));
+    const auto applyDockZone = [dk, dockItem, &desktopSettings] {
+        dk->setExclusiveZone(desktopSettings.dockAutoHide() ? 0 : int(dockItem->implicitHeight()));
+    };
+    QObject::connect(&desktopSettings, &DesktopSettings::dockAutoHideChanged, dock, applyDockZone);
+    applyDockZone();
     if (auto *input = dockItem->findChild<QQuickItem *>(QStringLiteral("inputArea"))) {
         const auto applyMask = [dock, input] {
             dock->setMask(QRegion(QRectF(input->x(), input->y(), input->width(), input->height()).toAlignedRect()));
@@ -162,13 +171,22 @@ int main(int argc, char *argv[])
     }
     dock->show();
 
-    // Panels (launcher, quick settings, notification list): one full-screen
-    // overlay, shown only while a panel is open. Clicking outside closes it.
+    // Panels (launcher, quick settings, notification list, desktop menu,
+    // wallpaper picker): one full-screen overlay, shown only while a panel is
+    // open. Clicking outside closes it.
     QQuickView *panels = makeSurface(&engine, QStringLiteral("surfaces/PanelSurface.qml"), screen);
     Window *pn = layer(panels, Window::LayerOverlay, allEdges, QStringLiteral("mpire-panels"));
     pn->setExclusiveZone(-1);
     panels->resize(size);
-    QObject::connect(&api, &ShellApi::panelChanged, panels, [&api, panels, pn] {
+    // While the system file chooser is open (wallpaper picker's "Add a
+    // picture"), step aside so it isn't hidden under the overlay.
+    QObject::connect(&desktopSettings, &DesktopSettings::browsingChanged, panels, [&desktopSettings, &api, panels] {
+        if (desktopSettings.browsing())
+            panels->hide();
+        else if (!api.panel().isEmpty())
+            panels->show();
+    });
+    QObject::connect(&api, &ShellApi::panelChanged, panels, [&api, panels, pn, &desktopSettings] {
         if (api.panel().isEmpty()) {
             panels->hide();
             return;
@@ -176,6 +194,8 @@ int main(int argc, char *argv[])
         // The launcher takes the keyboard for typing; other panels only when clicked.
         pn->setKeyboardInteractivity(api.panel() == QLatin1String("launcher") ? Window::KeyboardInteractivityExclusive
                                                                               : Window::KeyboardInteractivityOnDemand);
+        if (desktopSettings.browsing())
+            return;
         if (!panels->isVisible())
             panels->show();
         panels->requestActivate();

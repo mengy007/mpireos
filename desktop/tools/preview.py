@@ -5,8 +5,8 @@
     python3 desktop/tools/preview.py desktop  [--shot out.png]
     python3 desktop/tools/preview.py greeter  [--shot out.png] [--fake-sddm]
     python3 desktop/tools/preview.py shell-background|shell-topbar|shell-dock [--shot out.png]
-    python3 desktop/tools/preview.py panels --panel launcher|quick-settings|notifications|popups
-                                            [--query "text"] [--shot out.png]
+    python3 desktop/tools/preview.py panels --panel launcher|quick-settings|notifications|popups|desktop-menu|wallpaper
+                                            [--query "text"] [--menu-at 520,300] [--wallpaper mpire:lagoon] [--shot out.png]
 
 --fake-sddm gives the login screen stand-ins for SDDM's sddm, userModel, and
 sessionModel objects, so the code path used under SDDM is exercised.
@@ -15,7 +15,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QDate, QDateTime, QObject, Property, QRectF, QTime, QTimer, QUrl, Qt, Signal, Slot
+from PySide6.QtCore import QByteArray, QPointF, QDate, QDateTime, QObject, Property, QRectF, QTime, QTimer, QUrl, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QPainter, QPixmap, QStandardItem, QStandardItemModel
 from PySide6.QtQuick import QQuickImageProvider, QQuickView
 
@@ -205,13 +205,65 @@ class FakeSystemStatus(QObject):
     def powerOff(self): print("power off")
 
 
+class FakeDesktopSettings(QObject):
+    """Stands in for DesktopSettings (src/desktopsettings.h)."""
+    wallpaperChanged = Signal()
+    fillModeChanged = Signal()
+    dockAutoHideChanged = Signal()
+    picturesChanged = Signal()
+    browsingChanged = Signal()
+
+    def __init__(self, wallpaper="mpire:mist", pictures=()):
+        super().__init__()
+        self._wallpaper, self._fill, self._autohide = wallpaper, "fill", True
+        self._pictures = [dict(url=QUrl.fromLocalFile(str(p)).toString(), name=p.stem.replace("-", " ").capitalize())
+                          for p in pictures]
+
+    def _get_wallpaper(self): return self._wallpaper
+    def _set_wallpaper(self, v):
+        print("wallpaper:", v)
+        self._wallpaper = v
+        self.wallpaperChanged.emit()
+    wallpaper = Property(str, _get_wallpaper, _set_wallpaper, notify=wallpaperChanged)
+
+    def _get_fill(self): return self._fill
+    def _set_fill(self, v):
+        self._fill = v
+        self.fillModeChanged.emit()
+    fillMode = Property(str, _get_fill, _set_fill, notify=fillModeChanged)
+
+    def _get_autohide(self): return self._autohide
+    def _set_autohide(self, v):
+        print("dock auto-hide:", v)
+        self._autohide = v
+        self.dockAutoHideChanged.emit()
+    dockAutoHide = Property(bool, _get_autohide, _set_autohide, notify=dockAutoHideChanged)
+
+    pictures = Property("QVariantList", lambda self: self._pictures, notify=picturesChanged)
+    browsing = Property(bool, lambda self: False, notify=browsingChanged)
+
+    @Slot()
+    def refreshPictures(self): pass
+
+    @Slot()
+    def browse(self): print("browse for a picture")
+
+
 class FakeShellApi(QObject):
     """Stands in for mpire-shell's ShellApi (src/shellapi.h)."""
     panelChanged = Signal()
 
-    def __init__(self, panel=""):
+    def __init__(self, panel="", menu_at=(-1, -1)):
         super().__init__()
         self._panel = panel
+        self._menu = QPointF(*menu_at)
+
+    menuPosition = Property(QPointF, lambda self: self._menu, notify=panelChanged)
+
+    @Slot(float, float)
+    def openDesktopMenu(self, x, y):
+        self._menu = QPointF(x, y)
+        self._set_panel("desktop-menu")
 
     def _get_panel(self):
         return self._panel
@@ -283,6 +335,9 @@ def main() -> int:
     parser.add_argument("--fake-sddm", action="store_true", help="greeter: provide stand-in SDDM objects")
     parser.add_argument("--panel", default="", help="panels: launcher, quick-settings, notifications, or popups")
     parser.add_argument("--query", default="", help="panels: text typed into the launcher")
+    parser.add_argument("--menu-at", default="-1,-1", help="panels: where the desktop menu opens, x,y")
+    parser.add_argument("--wallpaper", default="mpire:mist", help="the desktop's wallpaper, e.g. mpire:lagoon")
+    parser.add_argument("--pictures", type=Path, nargs="*", default=[], help="wallpaper picker: sample pictures")
     args = parser.parse_args()
     w, h = (int(x) for x in args.size.split("x"))
 
@@ -295,11 +350,14 @@ def main() -> int:
         view.setColor(Qt.transparent)   # surfaces are transparent, as in mpire-shell
     ctx = view.rootContext()
     now = QDateTime.fromString(args.time, "yyyy-MM-ddTHH:mm") if args.time else QDateTime.currentDateTime()
-    keep = [FakeShellApi("" if args.panel == "popups" else args.panel), FakeAppIndex(), FakeNotifications(now), FakeSystemStatus()]
+    menu_at = tuple(float(v) for v in args.menu_at.split(","))
+    keep = [FakeShellApi("" if args.panel == "popups" else args.panel, menu_at), FakeAppIndex(), FakeNotifications(now),
+            FakeSystemStatus(), FakeDesktopSettings(args.wallpaper, args.pictures)]
     ctx.setContextProperty("shellApi", keep[0])
     ctx.setContextProperty("appIndex", keep[1])
     ctx.setContextProperty("notifications", keep[2])
     ctx.setContextProperty("systemStatus", keep[3])
+    ctx.setContextProperty("desktopSettings", keep[4])
     view.engine().addImageProvider("icon", LetterIcons())
     if args.fake_sddm:
         sddm, users, sessions = FakeSddm(), FakeUsers(), FakeSessions()

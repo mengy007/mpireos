@@ -2,13 +2,16 @@ import QtQuick
 import MpireOS.Style
 import ".."
 
-// The dock (layer-shell top layer, along the bottom edge). It hides itself:
-// it slides out of sight when the pointer leaves, and slides back up when the
-// pointer touches the bottom edge of the screen. mpire-shell limits the
+// The dock (layer-shell top layer, along the bottom edge). By default it hides
+// itself: it slides out of sight when the pointer leaves, and slides back up
+// when the pointer touches the bottom edge of the screen. "Hide the dock
+// automatically" in the desktop menu (desktopSettings.dockAutoHide) turns
+// that off, and it stays up. mpire-shell limits the
 // surface's input to `inputArea`, so while hidden only a thin strip at the
 // bottom edge catches the pointer and windows get every other click.
 Item {
     id: surface
+    readonly property bool autoHide: typeof desktopSettings === "undefined" || desktopSettings.dockAutoHide
     property bool revealed: true          // shown for a moment at login, then hides
     readonly property int margin: 10      // space under the dock when it is up
     property date now: new Date()
@@ -24,7 +27,7 @@ Item {
             if (hovered) {
                 hideTimer.stop()
                 surface.revealed = true
-            } else {
+            } else if (surface.autoHide) {
                 hideTimer.restart()
             }
         }
@@ -35,8 +38,12 @@ Item {
         running: true
         onTriggered: {
             interval = 600
-            if (!hover.hovered) surface.revealed = false
+            if (!hover.hovered && surface.autoHide) surface.revealed = false
         }
+    }
+    onAutoHideChanged: {
+        if (autoHide) hideTimer.restart()
+        else { hideTimer.stop(); revealed = true }
     }
 
     Dock {
