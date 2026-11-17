@@ -39,7 +39,7 @@ jobs:
           path: out
 
       - name: Check the ISO's checksum
-        run: cd out && sha256sum -c SHA256SUMS && ls -l *.iso
+        run: sha256sum -c out/SHA256SUMS && ls -l out/*.iso
 
       - name: Enable KVM
         run: |
