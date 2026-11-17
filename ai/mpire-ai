@@ -1,0 +1,14 @@
+#!/usr/bin/python3 -I
+# mpire-ai: MpireOS's built-in AI (see /usr/share/doc/mpire-ai or docs/ai.md).
+import os
+import sys
+
+here = os.path.dirname(os.path.realpath(__file__))
+for path in (os.path.join(here, "..", "lib", "mpire-ai"), here):
+    if os.path.isdir(os.path.join(path, "mpire_ai")):
+        sys.path.insert(0, os.path.abspath(path))
+        break
+
+from mpire_ai.cli import main  # noqa: E402
+
+sys.exit(main())

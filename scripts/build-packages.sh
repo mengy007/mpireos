@@ -19,6 +19,7 @@ cp -a "$repo/packages/." "$work/"
 # Packages built from this repository's sources get a copy of them.
 cp -a "$repo/installer" "$work/mpire-setup/installer"
 cp -a "$repo/desktop" "$work/mpire-desktop/desktop"
+cp -a "$repo/ai" "$work/mpire-ai/ai"
 # The same package files are promoted from testing to stable, so they carry
 # stable's defaults; mpire-update moves each system to its own channel.
 tr -d '[:space:]' < "$repo/channels/stable" > "$work/mpire-base/snapshot"

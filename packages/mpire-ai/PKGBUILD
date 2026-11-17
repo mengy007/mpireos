@@ -1,0 +1,38 @@
+# Maintainer: MpireOS contributors
+# mpire-ai: MpireOS's built-in AI layer. Talks to the AI the person chose
+# (cloud, this computer, or another computer on their network), keeps API keys
+# encrypted, and serves an OpenAI-compatible endpoint for apps. Mpire Desktop's
+# assistant and search use it. Built from ai/ in this repository:
+# scripts/build-packages.sh copies it next to this PKGBUILD.
+pkgname=mpire-ai
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="MpireOS's built-in AI: cloud, local, and network models for the desktop and apps"
+arch=('any')
+url="https://github.com/mengy007/mpireos"
+license=('GPL-3.0-or-later')
+depends=('python' 'systemd' 'iproute2')
+checkdepends=('curl')
+optdepends=('libsecret: keep API keys in the KDE or GNOME keyring'
+            'avahi: find model servers that announce themselves on the network'
+            'ollama: run models on this computer (mpire-ai local setup installs it)'
+            'konsole: show progress of mpire-ai local setup from AI settings')
+
+check() {
+    cd "$startdir/ai"
+    python -m unittest discover -s tests
+}
+
+package() {
+    cd "$startdir/ai"
+    install -Dm755 mpire-ai "$pkgdir/usr/bin/mpire-ai"
+    install -d "$pkgdir/usr/lib/mpire-ai/mpire_ai"
+    install -m644 mpire_ai/*.py "$pkgdir/usr/lib/mpire-ai/mpire_ai/"
+    python -m compileall -q -d /usr/lib/mpire-ai "$pkgdir/usr/lib/mpire-ai"
+    # The gateway for apps: started on first use of its socket, in every session.
+    install -Dm644 systemd/mpire-ai.socket "$pkgdir/usr/lib/systemd/user/mpire-ai.socket"
+    install -Dm644 systemd/mpire-ai.service "$pkgdir/usr/lib/systemd/user/mpire-ai.service"
+    install -d "$pkgdir/usr/lib/systemd/user/sockets.target.wants"
+    ln -s ../mpire-ai.socket "$pkgdir/usr/lib/systemd/user/sockets.target.wants/mpire-ai.socket"
+    install -Dm644 "$startdir/ai/README.md" "$pkgdir/usr/share/doc/mpire-ai/README.md"
+}

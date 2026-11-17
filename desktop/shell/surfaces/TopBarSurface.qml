@@ -12,6 +12,8 @@ TopBar {
     openTrayKey: shellApi.panel === "tray-menu" ? systemTray.menuKey : ""
     Timer { interval: 5000; repeat: true; running: true; triggeredOnStart: true; onTriggered: surface.now = new Date() }
     onSearchClicked: shellApi.TogglePanel("search")
+    onAssistantClicked: shellApi.TogglePanel("assistant")
+    assistantOpen: shellApi.panel === "assistant"
     onTrayActivated: (key, x) => systemTray.activate(key, x)
     onTrayMenuRequested: (key, x) => {
         if (shellApi.panel === "tray-menu" && systemTray.menuKey === key) shellApi.panel = ""

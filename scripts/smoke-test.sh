@@ -15,6 +15,11 @@ qmp="$(mktemp -u /tmp/qemu-qmp.XXXXXX)"
 accel=(-accel tcg)
 if [[ -w /dev/kvm ]]; then accel=(-enable-kvm -cpu host); fi
 
+# A stand-in AI model server on the host. The VM reaches it at 10.0.2.2,
+# where mpire-ai's network search finds it (see mpire-boot-check, ci_ai).
+python3 "$(dirname "$0")/../ai/tests/mock_server.py" 11434 127.0.0.1 0.08 &
+mock_ai=$!
+
 qemu-system-x86_64 "${accel[@]}" -m 4096 -smp 2 \
     -cdrom "$iso" -boot d \
     -vga std -display none \
@@ -25,10 +30,25 @@ qemu-system-x86_64 "${accel[@]}" -m 4096 -smp 2 \
     -usb -device usb-tablet \
     -nic user,model=virtio-net-pci &
 qemu=$!
-trap 'kill $qemu 2>/dev/null || true' EXIT
+trap 'kill $qemu $mock_ai 2>/dev/null || true' EXIT
 
 source "$(dirname "$0")/qemu-screenshot.sh"
 screenshot() { qemu_screenshot "$monitor" "$shot"; }
+# Types text into the VM, one key at a time (letters, digits, space, ? and .).
+type_text() {
+    local text="$1" ch i
+    for ((i = 0; i < ${#text}; i++)); do
+        ch="${text:i:1}"
+        case "$ch" in
+            " ") qemu_key "$monitor" spc ;;
+            "?") qemu_key "$monitor" shift-slash ;;
+            ".") qemu_key "$monitor" dot ;;
+            [A-Z]) qemu_key "$monitor" "shift-${ch,,}" ;;
+            *) qemu_key "$monitor" "$ch" ;;
+        esac
+        sleep 0.15
+    done
+}
 
 for ((t = 0; t < timeout; t += 5)); do
     if grep -q MPIREOS_DESKTOP_OK "$log" && grep -q MPIREOS_SETUP_OK "$log"; then
@@ -95,6 +115,46 @@ for ((t = 0; t < timeout; t += 5)); do
             sleep 2
             qemu_screenshot "$monitor" "${shot%.ppm}-search.ppm"
             qemu_key "$monitor" esc
+            # The AI: a question typed into universal search goes to the
+            # assistant, answered by the model server found on the network.
+            if grep -q MPIREOS_AI_READY "$log"; then
+                sleep 2
+                qemu_key "$monitor" meta_l-spc
+                sleep 3
+                type_text "how do I take a screenshot?"
+                sleep 2
+                qemu_screenshot "$monitor" "${shot%.ppm}-ai-search.ppm"
+                qemu_key "$monitor" ret
+                sleep 2
+                qemu_screenshot "$monitor" "${shot%.ppm}-ai-streaming.ppm"
+                sleep 8
+                qemu_screenshot "$monitor" "${shot%.ppm}-ai-answer.ppm"
+                # A follow-up, typed into the assistant itself.
+                type_text "thanks"
+                qemu_key "$monitor" ret
+                sleep 6
+                qemu_screenshot "$monitor" "${shot%.ppm}-ai-followup.ppm"
+                qemu_key "$monitor" esc
+                sleep 2
+                # Meta+A opens the assistant too.
+                qemu_key "$monitor" meta_l-a
+                sleep 3
+                qemu_screenshot "$monitor" "${shot%.ppm}-ai-shortcut.ppm"
+                qemu_key "$monitor" esc
+                sleep 2
+                # AI settings, found by searching for "ai".
+                qemu_key "$monitor" meta_l-spc
+                sleep 3
+                type_text "ai"
+                sleep 2
+                qemu_key "$monitor" ret
+                sleep 4
+                qemu_screenshot "$monitor" "${shot%.ppm}-ai-settings.ppm"
+                qemu_key "$monitor" esc
+            else
+                echo "note: mpire-ai did not get ready"
+            fi
+            grep -a MPIREOS_AI "$log" || true
         fi
         # The dock hides itself; pushing the pointer against the bottom edge brings it back.
         sleep 3
@@ -133,7 +193,7 @@ for ((t = 0; t < timeout; t += 5)); do
         qemu_click "$qmp" 900 200 left "$ref"
         sleep 4
         qemu_screenshot "$monitor" "${shot%.ppm}-dock-pinned.ppm"
-        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT -e MPIREOS_TRAY "$log" || true
+        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT -e MPIREOS_TRAY -e MPIREOS_AI "$log" || true
         exit 0
     fi
     if grep -q -e MPIREOS_DESKTOP_FAIL -e MPIREOS_SETUP_FAIL "$log"; then

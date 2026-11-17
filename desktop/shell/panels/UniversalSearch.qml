@@ -5,7 +5,8 @@ import "../search.js" as Search
 
 // Universal search (Meta+Space, or the search icon in the top bar): one field
 // that finds apps, files and folders, settings, and system actions, does math
-// and unit conversions, and searches the web. Results come in sections on the
+// and unit conversions, asks the AI (questions go there first), and searches
+// the web. Results come in sections on the
 // left; the selected one is previewed on the right.
 // Keys: arrows move, Enter opens, Ctrl+Enter shows a file in its folder,
 // Ctrl+C copies an answer or a file's path, Esc closes.
@@ -13,11 +14,13 @@ Item {
     id: root
     property var apps: []                     // AppIndex entries (src/apps.h)
     property var files: null                  // FileSearch (src/filesearch.h), or a stand-in
+    property var ai: null                     // AiAssistant (src/ai.h): offers "Ask AI"
     property alias query: input.text
     readonly property bool searching: query.trim().length > 0
     // FileSearch.revision: search again when the file index is rebuilt.
     readonly property var fileHits: searching && files ? (files.revision, files.search(query, 6)) : []
-    readonly property var rows: Search.universal(query, apps, fileHits)
+    readonly property var aiInfo: ai && ai.available ? { ready: ai.ready, name: ai.current.name || "" } : null
+    readonly property var rows: Search.universal(query, apps, fileHits, aiInfo)
     property int cursor: 0
     readonly property var selected: rows[cursor] && rows[cursor].kind !== "header" ? rows[cursor] : null
 
@@ -27,6 +30,7 @@ Item {
     signal copyText(string text)
     signal openUrl(string url)
     signal reveal(string path)
+    signal askAi(string question)
     signal close()
 
     function reset() {
@@ -47,6 +51,7 @@ Item {
         case "system": root.runAction(item.action); break
         case "calc": root.copyText(item.value); break
         case "web": case "file": root.openUrl(item.url); break
+        case "ai": root.askAi(item.question); return       // opens the assistant
         }
         root.close()
     }
@@ -310,6 +315,9 @@ Item {
                         case "system": return qsTr("System action")
                         case "calc": return it.detail || ""
                         case "web": return qsTr("Opens DuckDuckGo in your browser")
+                        case "ai": return root.aiInfo && root.aiInfo.ready
+                                   ? qsTr("Answers in the assistant, with %1").arg(root.aiInfo.name)
+                                   : qsTr("Choose a cloud AI, one on this computer, or one on your network")
                         }
                         return ""
                     }
@@ -377,6 +385,7 @@ Item {
                         case "calc": return qsTr("Copy")
                         case "system": return qsTr("Run")
                         case "web": return qsTr("Search")
+                        case "ai": return root.aiInfo && root.aiInfo.ready ? qsTr("Ask") + "  ↵" : qsTr("Set Up AI")
                         }
                         return qsTr("Open") + "  ↵"
                     }
