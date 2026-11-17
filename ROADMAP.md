@@ -33,7 +33,7 @@ Goal: a developer ISO that boots in a VM and on common hardware, and installs to
 Goal: boot and install straight into Mpire Desktop, with no Plasma.
 
 - [ ] `MpireOS.Style` QML module implementing the design system (shared with Mpire Setup)
-- [ ] Desktop widgets: Today, A moment of focus, Now playing
+- [ ] A clean desktop with a right-click menu and a wallpaper picker
 - [ ] `mpire-session`: starts the compositor (KWin for now) and the shell
 - [ ] `mpire-shell`: top bar, dock, app launcher, notifications, quick settings, volume and brightness pop-ups
 - [ ] `mpire-greeter` and `mpire-lock`

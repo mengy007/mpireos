@@ -154,13 +154,13 @@ A 44 px frosted bar across the top.
 
 A centered row of app icons 24 px above the bottom edge, with **no panel behind it**: the icons float directly on the desktop. 52 px icons with 12 px gaps. The launcher button sits first, separated by a hairline; settings sits last, after another hairline. Running apps get a small accent dot below the icon.
 
-### Desktop greeting and widgets
+### The desktop
 
-- **Greeting** at the top left: the date as an overline ("THURSDAY, NOVEMBER 12") above a Greeting-style line ("A little space for everything." with a small accent sparkle).
-- **Shortcuts** at the top right: My files and Wallpapers as small icon tiles with labels.
-- **Widgets** in a right-hand column, **without card backgrounds**: their content sits directly on the desktop, separated by space rather than boxes: **Today** (large day number, month grid with today in an accent circle, and a one-line note), **A moment of focus** (a 25:00 focus timer with a round accent play button), and **Now playing** (album art, title, source, play).
-- A quiet "Make it yours" link under the widgets opens desktop customization.
-- **Bottom corners:** the MpireOS mark with "Thoughtfully yours." on the left, and a "Find your flow" search hint with its shortcut on the right.
+The desktop is **just the wallpaper**: no icons, widgets, or greeting, so nothing competes with what you are doing. Everything else is one right-click away.
+
+- **Desktop menu** (right-click, or press and hold on a touch screen): a small white card at the pointer, `radius` 16, elevation 3, 36 px rows with an outline icon and 13 px text; the hovered row gets a `selection` tint. Rows: **Change wallpaper…** (semibold, it is the main thing people come for), Display settings, **Auto-hide the dock** (with a switch), then Open Files and Open Terminal, then All settings, with hairlines between the groups. It flips left or up near the screen's edges.
+- **Wallpaper picker**: a large card (`radius` 24, elevation 4) sitting low on the screen so the wallpaper shows above it. Choices apply **right away** and fade in, so trying things is free; Done just closes it. Sections, under overline labels: **MpireOS** (our own wallpapers, 16:9 thumbnails with names, the chosen one outlined in `accent` with a check badge), **Colors** (round swatches from the palette), and **Your pictures** (an "Add a picture" tile that opens the system file chooser, then pictures from `~/Pictures` and the system's wallpaper folders). The footer has the placement chips for pictures (Fill screen, Fit, Center, Tile) and an accent Done button.
+- **Our wallpapers** are drawn, not image files: a diagonal wash between two palette colors, a soft glow, and the same broad light rings as the backdrop. Morning mist (the backdrop itself, the default), Lagoon, Lavender, Daybreak, Meadow, Open sky, Sandstone, and Midnight.
 
 ### Windows
 

@@ -59,3 +59,40 @@ time.sleep(1)
 s.close()
 PY
 }
+
+# qemu_click <qmp-socket> <x-px> <y-px> [left|right] [screen-ppm]: moves the
+# pointer to pixel x, y and clicks. Pixels are converted to usb-tablet units
+# using the size of the screen in screen-ppm (a screendump), else 1280x800.
+qemu_click() {
+    python3 - "$1" "$2" "$3" "${4:-left}" "${5:-}" <<'PY' || true
+import json, os, socket, sys, time
+qmp, x, y, button, ppm = sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), sys.argv[4], sys.argv[5]
+w, h = 1280, 800
+if ppm and os.path.exists(ppm):
+    with open(ppm, "rb") as f:
+        fields = []
+        while len(fields) < 3:
+            line = f.readline()
+            if not line.startswith(b"#"):
+                fields += line.split()
+        w, h = int(fields[1]), int(fields[2])
+s = socket.socket(socket.AF_UNIX)
+s.connect(qmp)
+f = s.makefile("rw")
+f.readline()
+def call(cmd, **args):
+    f.write(json.dumps({"execute": cmd, "arguments": args} if args else {"execute": cmd}) + "\n")
+    f.flush()
+    return f.readline().strip()
+call("qmp_capabilities")
+ax, ay = int(x * 32767 / (w - 1)), int(y * 32767 / (h - 1))
+call("input-send-event", events=[{"type": "abs", "data": {"axis": "x", "value": ax}},
+                                 {"type": "abs", "data": {"axis": "y", "value": ay}}])
+time.sleep(0.4)
+for down in (True, False):
+    print("qmp click:", button, down, call("input-send-event", events=[{"type": "btn", "data": {"down": down, "button": button}}]))
+    time.sleep(0.15)
+time.sleep(0.5)
+s.close()
+PY
+}

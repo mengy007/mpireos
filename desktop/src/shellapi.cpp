@@ -15,7 +15,8 @@ ShellApi::ShellApi(QObject *parent)
 bool ShellApi::isPanel(const QString &name)
 {
     return name == QLatin1String("launcher") || name == QLatin1String("quick-settings")
-        || name == QLatin1String("notifications");
+        || name == QLatin1String("notifications") || name == QLatin1String("desktop-menu")
+        || name == QLatin1String("wallpaper");
 }
 
 void ShellApi::setPanel(const QString &panel)
@@ -25,6 +26,15 @@ void ShellApi::setPanel(const QString &panel)
         return;
     m_panel = p;
     emit panelChanged();
+}
+
+void ShellApi::openDesktopMenu(qreal x, qreal y)
+{
+    m_menuPosition = QPointF(x, y);
+    if (m_panel == QLatin1String("desktop-menu"))
+        emit panelChanged();             // already open: move it to the new spot
+    else
+        setPanel(QStringLiteral("desktop-menu"));
 }
 
 void ShellApi::launch(const QString &command)
@@ -48,7 +58,19 @@ void ShellApi::copy(const QString &text)
     QGuiApplication::clipboard()->setText(text);
 }
 
-void ShellApi::ShowPanel(const QString &name) { setPanel(name); }
-void ShellApi::TogglePanel(const QString &name) { setPanel(m_panel == name ? QString() : name); }
+void ShellApi::ShowPanel(const QString &name)
+{
+    if (name == QLatin1String("desktop-menu"))
+        m_menuPosition = QPointF(-1, -1);
+    setPanel(name);
+}
+void ShellApi::TogglePanel(const QString &name)
+{
+    if (m_panel == name) {
+        setPanel(QString());
+        return;
+    }
+    ShowPanel(name);
+}
 void ShellApi::HidePanel() { setPanel(QString()); }
 void ShellApi::ToggleLauncher() { TogglePanel(QStringLiteral("launcher")); }
