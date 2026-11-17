@@ -6,7 +6,7 @@ MpireOS's own desktop environment. See [docs/architecture.md](../docs/architectu
 
 Mpire Desktop is what you see after booting MpireOS:
 
-- **`mpire-shell`** (`src/`) draws the desktop, the top bar, the dock, the launcher, notifications, and quick settings as Wayland layer-shell surfaces. For now it runs inside the Plasma session in place of `plasmashell` (a systemd drop-in, `session/mpire-shell.conf`), so KWin and the Plasma apps keep working underneath.
+- **`mpire-shell`** (`src/`) draws the desktop, the top bar, the dock (which hides itself and slides up when the pointer reaches the bottom edge), the launcher, notifications, and quick settings as Wayland layer-shell surfaces. For now it runs inside the Plasma session in place of `plasmashell` (a systemd drop-in, `session/mpire-shell.conf`), so KWin and the Plasma apps keep working underneath.
 - **The login screen** (`greeter/`) is the SDDM theme `mpireos`, selected by `session/30-mpire-theme.conf`.
 - Both are in the `mpire-desktop` package (`packages/mpire-desktop`), which also installs the shared `MpireOS.Style` QML module.
 

@@ -24,38 +24,38 @@ Rectangle {
 
     component TrayIcon: Icon {
         signal clicked()
-        size: 18
+        size: 16
         color: Theme.text
         opacity: trayArea.containsMouse ? 0.7 : 1
         MouseArea { id: trayArea; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: parent.clicked() }
     }
 
-    implicitHeight: 44
+    implicitHeight: Theme.topBarHeight
     color: Theme.chrome
     Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Theme.divider }
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 22
-        anchors.rightMargin: 24
+        anchors.leftMargin: 14
+        anchors.rightMargin: 16
         spacing: 0
 
-        Mark { Layout.rightMargin: 9 }
+        Mark { size: 16; Layout.rightMargin: 7 }
         Text {
             text: "MpireOS"
             color: Theme.text
             font.family: Theme.fontFamily
-            font.pixelSize: 16
+            font.pixelSize: 13
             font.weight: Font.DemiBold
             font.letterSpacing: -0.4
         }
-        Rectangle { visible: bar.appName.length > 0; Layout.leftMargin: 16; Layout.rightMargin: 16; Layout.preferredWidth: 1; Layout.preferredHeight: 16; color: Theme.border }
+        Rectangle { visible: bar.appName.length > 0; Layout.leftMargin: 12; Layout.rightMargin: 12; Layout.preferredWidth: 1; Layout.preferredHeight: 12; color: Theme.border }
         Text {
             visible: bar.appName.length > 0
             text: bar.appName
             color: Theme.text
             font.family: Theme.fontFamily
-            font.pixelSize: 13
+            font.pixelSize: 12
             font.weight: Font.DemiBold
         }
         Repeater {
@@ -66,7 +66,7 @@ Rectangle {
                 text: modelData
                 color: Theme.textSecondary
                 font.family: Theme.fontFamily
-                font.pixelSize: 13
+                font.pixelSize: 12
             }
         }
         Item { Layout.fillWidth: true }
@@ -76,9 +76,9 @@ Rectangle {
     Rectangle {
         visible: bar.workspace.length > 0
         anchors.centerIn: parent
-        height: 28
-        width: wsRow.implicitWidth + 24
-        radius: 14
+        height: 22
+        width: wsRow.implicitWidth + 20
+        radius: 11
         color: wsArea.containsMouse ? "#B3FFFFFF" : "transparent"
         RowLayout {
             id: wsRow
@@ -89,18 +89,18 @@ Rectangle {
                 text: bar.workspace
                 color: Theme.textSecondary
                 font.family: Theme.fontFamily
-                font.pixelSize: 13
+                font.pixelSize: 12
             }
-            Icon { name: "chevronDown"; size: 14 }
+            Icon { name: "chevronDown"; size: 12 }
         }
         MouseArea { id: wsArea; anchors.fill: parent; hoverEnabled: true }
     }
 
     RowLayout {
         anchors.right: parent.right
-        anchors.rightMargin: 24
+        anchors.rightMargin: 16
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 18
+        spacing: 14
         TrayIcon { name: "search"; onClicked: bar.searchClicked() }
         TrayIcon {
             name: "bell"
@@ -109,7 +109,7 @@ Rectangle {
             Rectangle {
                 visible: bar.unread > 0
                 anchors { right: parent.right; top: parent.top; rightMargin: -1; topMargin: -1 }
-                width: 8; height: 8; radius: 4
+                width: 7; height: 7; radius: 3.5
                 color: Theme.accent
                 border.color: "white"
             }
@@ -119,7 +119,7 @@ Rectangle {
         RowLayout {
             visible: bar.battery >= 0
             spacing: 6
-            Icon { name: "battery"; size: 20; color: Theme.text }
+            Icon { name: "battery"; size: 17; color: Theme.text }
             Text {
                 text: bar.battery + "%"
                 color: Theme.text
@@ -132,7 +132,7 @@ Rectangle {
             text: Qt.formatTime(bar.now, "h:mm AP")
             color: Theme.text
             font.family: Theme.fontFamily
-            font.pixelSize: 13
+            font.pixelSize: 12
             font.weight: Font.DemiBold
             font.features: { "tnum": 1 }
         }

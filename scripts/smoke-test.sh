@@ -9,6 +9,7 @@ timeout="${2:-1200}"
 log="${SERIAL_LOG:-serial.log}"
 shot="$(realpath -m "${SCREENSHOT:-live-desktop.ppm}")"
 monitor="$(mktemp -u /tmp/qemu-monitor.XXXXXX)"
+qmp="$(mktemp -u /tmp/qemu-qmp.XXXXXX)"
 : > "$log"
 
 accel=(-accel tcg)
@@ -19,7 +20,9 @@ qemu-system-x86_64 "${accel[@]}" -m 4096 -smp 2 \
     -vga std -display none \
     -serial "file:$log" \
     -monitor "unix:$monitor,server,nowait" \
+    -qmp "unix:$qmp,server,nowait" \
     -fw_cfg name=opt/mpireos/ci,string=1 \
+    -usb -device usb-tablet \
     -nic user,model=virtio-net-pci &
 qemu=$!
 trap 'kill $qemu 2>/dev/null || true' EXIT
@@ -63,6 +66,14 @@ for ((t = 0; t < timeout; t += 5)); do
             qemu_screenshot "$monitor" "${shot%.ppm}-search.ppm"
             qemu_key "$monitor" esc
         fi
+        # The dock hides itself; pushing the pointer against the bottom edge brings it back.
+        sleep 3
+        qemu_screenshot "$monitor" "${shot%.ppm}-dock-hidden.ppm"
+        # usb-tablet is absolute (0-32767 on each axis): bottom center of the screen.
+        qemu_pointer "$qmp" 16384 30000
+        qemu_pointer "$qmp" 16384 32767
+        sleep 2
+        qemu_screenshot "$monitor" "${shot%.ppm}-dock-shown.ppm"
         grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT "$log" || true
         exit 0
     fi

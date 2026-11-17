@@ -121,7 +121,7 @@ function search(query, apps, limit) {
         var a = apps[i];
         var r = best(q, [[a.name, 1], [a.genericName, 0.8], [a.keywords, 0.7], [a.comment, 0.45]]);
         if (r > 0)
-            out.push({ kind: "app", title: a.name, subtitle: a.genericName || a.comment || "", icon: a.icon,
+            out.push({ kind: "app", title: a.name, subtitle: (a.genericName && a.genericName !== a.name ? a.genericName : a.comment) || "", icon: a.icon,
                        glyph: "grid", hint: "Open", id: a.id, rank: r + 5 });
     }
     for (var j = 0; j < settingsPages.length; j++) {

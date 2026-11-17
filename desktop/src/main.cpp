@@ -11,6 +11,7 @@
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickView>
+#include <QRegion>
 #include <QScreen>
 #include <QUrl>
 
@@ -26,8 +27,7 @@ using LayerShellQt::Window;
 
 namespace {
 
-constexpr int kTopBarHeight = 44;
-constexpr int kDockMargin = 24;
+constexpr int kTopBarHeight = 30;        // Theme.topBarHeight
 constexpr int kPopupWidth = 392;         // 360 card + room for its shadow
 const char *kService = "org.mpireos.Shell";
 const char *kPath = "/org/mpireos/Shell";
@@ -142,14 +142,24 @@ int main(int argc, char *argv[])
     topBar->resize(size.width(), kTopBarHeight);
     topBar->show();
 
-    // Dock: floating above the bottom edge, centered; maximized windows stop above it.
+    // Dock: centered at the bottom; hides itself and slides up when the pointer
+    // reaches the bottom edge (DockSurface.qml). It reserves no space, so
+    // maximized windows use the full height.
     QQuickView *dock = makeSurface(&engine, QStringLiteral("surfaces/DockSurface.qml"), screen);
     QQuickItem *dockItem = dock->rootObject();
-    const QSize dockSize(int(dockItem->implicitWidth()), int(dockItem->implicitHeight()));
-    Window *dk = layer(dock, Window::LayerTop, Window::Anchors(Window::AnchorBottom), QStringLiteral("mpire-dock"));
-    dk->setMargins(QMargins(0, 0, 0, kDockMargin));
-    dk->setExclusiveZone(dockSize.height() + kDockMargin);
-    dock->resize(dockSize);
+    Window *dk = layer(dock, Window::LayerTop,
+                       Window::Anchors(Window::AnchorBottom | Window::AnchorLeft | Window::AnchorRight),
+                       QStringLiteral("mpire-dock"));
+    dk->setExclusiveZone(0);
+    dock->resize(size.width(), int(dockItem->implicitHeight()));
+    if (auto *input = dockItem->findChild<QQuickItem *>(QStringLiteral("inputArea"))) {
+        const auto applyMask = [dock, input] {
+            dock->setMask(QRegion(QRectF(input->x(), input->y(), input->width(), input->height()).toAlignedRect()));
+        };
+        for (auto signal : {&QQuickItem::xChanged, &QQuickItem::yChanged, &QQuickItem::widthChanged, &QQuickItem::heightChanged})
+            QObject::connect(input, signal, dock, applyMask);
+        applyMask();
+    }
     dock->show();
 
     // Panels (launcher, quick settings, notification list): one full-screen

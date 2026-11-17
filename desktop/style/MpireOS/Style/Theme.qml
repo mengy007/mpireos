@@ -68,6 +68,7 @@ QtObject {
     readonly property int animNormal: 220
     readonly property int animSlow: 360
     readonly property int radiusDock: 22
+    readonly property int topBarHeight: 30      // Mpire Desktop's top bar
     readonly property color butter: "#F2D58C"
     readonly property color butterTint: "#FCF6E3"
     readonly property color slate: "#AEB7C6"
