@@ -1,6 +1,39 @@
+# Changes that installed systems need when they update to a newer mpire-base.
+# Each one is safe to run more than once.
+migrate() {
+    # [mpire] follows the update channel through /etc/pacman.d/mpire-repo
+    # (MpireOS 0.1 had the stable URL written into pacman.conf).
+    sed -i '/^\[mpire\]/,/^\[/{s|^Server = https://github.com/mengy007/mpireos/releases/download/repo$|Include = /etc/pacman.d/mpire-repo|}' \
+        /etc/pacman.conf
+
+    # Once the project signing key ships in mpire-keyring, require signatures.
+    if [ -s /usr/share/pacman/keyrings/mpireos.gpg ]; then
+        sed -i '/^\[mpire\]/,/^\[/{/^# TODO: switch to "Required"/d;s|^SigLevel = Optional TrustedOnly$|SigLevel = Required|}' \
+            /etc/pacman.conf
+    fi
+
+    # Snapshot boot entries need a mountable root by name and an overlay-capable initramfs.
+    if [ -f /etc/fstab ] && grep -q 'subvolid=' /etc/fstab; then
+        sed -i -E 's/,?subvolid=[0-9]+//' /etc/fstab
+    fi
+    conf=/etc/mkinitcpio.conf.d/mpireos.conf
+    if [ -f "$conf" ] && grep -q '^HOOKS=(.*\bsystemd\b' "$conf" && ! grep -q 'sd-volatile' "$conf"; then
+        sed -i -E 's/^(HOOKS=\(.*\bsystemd\b)/\1 sd-volatile/' "$conf"
+        mkinitcpio -P >/dev/null 2>&1 || echo "mpire-base: mkinitcpio failed; run 'sudo mkinitcpio -P'"
+    fi
+
+    # MpireOS writes its own snapshot boot entries now (41_mpire_snapshots).
+    if [ -x /etc/grub.d/41_snapshots-btrfs ]; then
+        systemctl disable --now grub-btrfsd.service >/dev/null 2>&1 || true
+        chmod -x /etc/grub.d/41_snapshots-btrfs
+    fi
+}
+
 post_install() {
     /usr/lib/mpireos/mpire-os-release
 }
+
 post_upgrade() {
     /usr/lib/mpireos/mpire-os-release
+    migrate
 }

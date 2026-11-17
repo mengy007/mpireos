@@ -1,0 +1,11 @@
+# Keep the outgoing kernel so Btrfs snapshots that use it stay bootable.
+[Trigger]
+Type = Path
+Operation = Upgrade
+Operation = Remove
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Description = Keeping the current kernel for MpireOS snapshots...
+When = PreTransaction
+Exec = /usr/lib/mpireos/mpire-keep-kernel

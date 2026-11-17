@@ -27,5 +27,5 @@ echo "$fpr:4:" > "$root/packages/mpire-keyring/mpireos-trusted"
 
 echo
 echo "Signing key $fpr created and saved as the MPIRE_SIGNING_KEY secret on $repo."
-echo "Next: commit packages/mpire-keyring/, set [mpire] SigLevel to Required in iso/pacman.conf.in,"
+echo "Next: bump pkgrel in packages/mpire-keyring/PKGBUILD and commit packages/mpire-keyring/ (systems then require signatures by themselves),"
 echo "and move mpireos-signing-key.asc to offline storage."

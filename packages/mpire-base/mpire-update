@@ -1,50 +1,95 @@
 #!/bin/bash
 # mpire-update: keep MpireOS up to date.
 #
-# MpireOS does not follow live Arch mirrors. Each channel points at a dated Arch
-# snapshot that MpireOS has tested. Updating means:
+# MpireOS does not follow live Arch mirrors. Each channel (stable or testing)
+# points at a dated Arch snapshot that MpireOS has tested, plus its own [mpire]
+# package repository. Updating means:
 #   1. ask MpireOS which snapshot the channel is on now,
-#   2. point pacman at that snapshot,
+#   2. point pacman at that snapshot and at the channel's [mpire] repository,
 #   3. upgrade (snap-pac takes a Btrfs snapshot before and after),
 #   4. update Flatpak apps.
-# If anything goes wrong, boot the "before" snapshot from the boot menu.
+# If anything goes wrong, boot the "before" snapshot from the boot menu
+# ("MpireOS snapshots"), then run mpire-rollback to keep it.
 set -euo pipefail
 
 CONF=/etc/mpireos/update.conf
+CHANNEL_FILE=/etc/mpireos/channel
 MIRRORLIST=/etc/pacman.d/mpire-snapshot
+REPOLIST=/etc/pacman.d/mpire-repo
 STATE_DIR=/var/lib/mpire-update
 CHANNEL=stable
-RELEASE_URL=https://github.com/mengy007/mpireos/releases/download/repo
+[[ -r $CHANNEL_FILE ]] && CHANNEL="$(tr -d '[:space:]' < "$CHANNEL_FILE")"
+RELEASE_BASE=https://github.com/mengy007/mpireos/releases/download
 AUTO=yes
 [[ -r $CONF ]] && . "$CONF"
+# update.conf from MpireOS 0.1 set RELEASE_URL to the stable repository itself.
+[[ -n ${RELEASE_URL:-} ]] && RELEASE_BASE="${RELEASE_URL%/*}"
 
 usage() {
     cat <<USAGE
 Usage: mpire-update [--check] [--auto] [--yes]
+       mpire-update --channel stable|testing
 
   (no option)  Check for updates and install them, asking first
   --check      Only report whether updates are available
   --yes        Install without asking
   --auto       Background mode used by mpire-update.timer (implies --yes;
                does nothing if AUTO=no in $CONF)
+  --channel    Switch release channel (takes effect on the next update)
 
-Channel: $CHANNEL (set CHANNEL in $CONF)
+Channel: $CHANNEL
+To undo an update: restart, pick "MpireOS snapshots" in the boot menu, then
+run mpire-rollback to keep the snapshot you booted.
 USAGE
 }
 
 mode=interactive
-for arg in "$@"; do
-    case "$arg" in
+new_channel=
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --check) mode=check ;;
         --yes|-y) mode=yes ;;
         --auto) mode=auto ;;
+        --channel) mode=channel; new_channel="${2:-}"; shift ;;
+        --channel=*) mode=channel; new_channel="${1#*=}" ;;
         -h|--help) usage; exit 0 ;;
         *) usage >&2; exit 2 ;;
     esac
+    shift
 done
 
 log() { echo "mpire-update: $*"; }
 die() { echo "mpire-update: $*" >&2; exit 1; }
+
+repo_tag() {
+    case "$1" in
+        stable) echo repo ;;
+        testing) echo repo-testing ;;
+        *) return 1 ;;
+    esac
+}
+
+if [[ $mode == channel ]]; then
+    repo_tag "$new_channel" >/dev/null || die "unknown channel '$new_channel' (use stable or testing)"
+    [[ $EUID -eq 0 ]] || exec sudo "$0" --channel "$new_channel"
+    mkdir -p "$(dirname "$CHANNEL_FILE")"
+    echo "$new_channel" > "$CHANNEL_FILE"
+    # A CHANNEL line in update.conf would win over the channel file; keep them in step.
+    [[ -f $CONF ]] && sed -i "s/^CHANNEL=.*/CHANNEL=$new_channel/" "$CONF"
+    log "channel set to $new_channel. Run mpire-update to update from it."
+    [[ $new_channel == stable ]] && log "note: updates never move backwards, so this system stays where it is until stable catches up."
+    exit 0
+fi
+
+tag="$(repo_tag "$CHANNEL")" || die "unknown channel '$CHANNEL' in $CHANNEL_FILE or $CONF"
+REPO_URL="$RELEASE_BASE/$tag"
+
+# Booted from a snapshot (see /etc/grub.d/41_mpire_snapshots): its changes are
+# thrown away at shutdown, and writing the boot menu from here would break it.
+if grep -qw 'mpire\.snapshot=[0-9]*' /proc/cmdline; then
+    [[ $mode == auto ]] && exit 0
+    die "this is a snapshot boot. Run mpire-rollback to keep this snapshot, or restart into MpireOS to update."
+fi
 
 if [[ $mode == auto && ${AUTO,,} != yes ]]; then
     log "automatic updates are turned off (AUTO=no in $CONF)"
@@ -55,8 +100,8 @@ fi
 current="$(sed -n 's|^Server = .*/repos/\([0-9]\{4\}/[0-9]\{2\}/[0-9]\{2\}\)/.*|\1|p' "$MIRRORLIST" | head -n1)"
 [[ -n $current ]] || die "can't read the current snapshot from $MIRRORLIST"
 
-latest="$(curl -fsSL --retry 3 --max-time 30 "$RELEASE_URL/$CHANNEL.channel" | tr -d '[:space:]')" \
-    || die "can't reach MpireOS updates ($RELEASE_URL). Are you online?"
+latest="$(curl -fsSL --retry 3 --max-time 30 "$REPO_URL/$CHANNEL.channel" | tr -d '[:space:]')" \
+    || die "can't reach MpireOS updates ($REPO_URL). Are you online?"
 [[ $latest =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]] || die "unexpected channel data: '$latest'"
 
 # Never move backwards: a channel only ever moves forward in time.
@@ -86,11 +131,14 @@ fi
 
 mkdir -p "$STATE_DIR"
 cp -a "$MIRRORLIST" "$STATE_DIR/mpire-snapshot.previous"
+[[ -f $REPOLIST ]] && cp -a "$REPOLIST" "$STATE_DIR/mpire-repo.previous"
+printf '# Managed by mpire-update. Channel: %s\nServer = %s\n' "$CHANNEL" "$REPO_URL" > "$REPOLIST"
 printf '# Managed by mpire-update. Channel: %s\nServer = https://archive.archlinux.org/repos/%s/$repo/os/$arch\n' \
     "$CHANNEL" "$latest" > "$MIRRORLIST"
 
 restore() {
     cp -a "$STATE_DIR/mpire-snapshot.previous" "$MIRRORLIST"
+    [[ -f $STATE_DIR/mpire-repo.previous ]] && cp -a "$STATE_DIR/mpire-repo.previous" "$REPOLIST"
     date -Is > "$STATE_DIR/last-failure"
     die "update failed; nothing was changed. Details: journalctl -u mpire-update"
 }
@@ -101,6 +149,13 @@ if ! pacman -Su --noconfirm; then
     # pacman may have partly upgraded; the "pre" snapshot from snap-pac is the way back.
     date -Is > "$STATE_DIR/last-failure"
     die "upgrade failed part way. Boot the snapshot taken before this update from the boot menu to undo it."
+fi
+
+# MpireOS 0.1 used grub-btrfs for snapshot boot entries; MpireOS now writes its
+# own (they also keep the matching kernel), so the old ones would be duplicates.
+if pacman -Qi grub-btrfs 2>/dev/null | grep -q '^Required By *: None'; then
+    systemctl disable --now grub-btrfsd.service &>/dev/null || true
+    pacman -R --noconfirm grub-btrfs || log "couldn't remove grub-btrfs; its boot entries may show twice"
 fi
 
 if command -v flatpak >/dev/null; then

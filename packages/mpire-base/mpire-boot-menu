@@ -1,0 +1,27 @@
+#!/bin/bash
+# Refresh the boot menu so it lists the current Btrfs snapshots, and drop kept
+# kernels (see mpire-keep-kernel) that no snapshot needs any more.
+# Run by pacman after every transaction (after snap-pac's snapshot) and after
+# snapper's cleanup.
+set -u
+keep=/boot/mpire-kernels
+grep -q 'mpire\.snapshot=' /proc/cmdline && exit 0
+[[ -f /boot/grub/grub.cfg ]] || exit 0
+
+if [[ -d $keep ]]; then
+    declare -A wanted=()
+    for modules in /.snapshots/*/snapshot/usr/lib/modules/*/ /usr/lib/modules/*/; do
+        [[ -d $modules ]] && wanted[$(basename "$modules")]=1
+    done
+    for dir in "$keep"/*/; do
+        [[ -d $dir ]] || continue
+        kver="$(basename "$dir")"
+        [[ $kver == *.tmp || -z ${wanted[$kver]:-} ]] && rm -rf "$dir" && echo "mpire-boot-menu: removed kept kernel $kver"
+    done
+fi
+
+grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>/tmp/mpire-boot-menu.log \
+    || { cat /tmp/mpire-boot-menu.log >&2; echo "mpire-boot-menu: couldn't refresh the boot menu" >&2; exit 0; }
+grep -E '^(Found MpireOS|Snapshot [0-9]+:)' /tmp/mpire-boot-menu.log | head -n 3 || true
+rm -f /tmp/mpire-boot-menu.log
+exit 0

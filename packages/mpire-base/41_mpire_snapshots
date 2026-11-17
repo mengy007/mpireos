@@ -1,0 +1,105 @@
+#!/bin/sh
+# MpireOS: "MpireOS snapshots" boot menu, one entry per Btrfs snapshot taken
+# before a change (snap-pac "pre" snapshots and the "Fresh install" one).
+#
+# /boot is the EFI partition, so kernels are not inside snapshots. Each entry
+# boots the kernel that matches the snapshot's modules: the current one, or a
+# copy kept in /boot/mpire-kernels/<version>/ by mpire-keep-kernel. Snapshots
+# whose kernel is gone are left out. The snapshot is read-only, so it boots with
+# systemd.volatile=overlay (changes live in RAM until shutdown); run
+# mpire-rollback from there to make it the system again.
+set -e
+
+prefix="/usr"
+exec_prefix="/usr"
+datarootdir="/usr/share"
+. "${pkgdatadir:-/usr/share/grub}/grub-mkconfig_lib"
+
+SNAPDIR=/.snapshots
+KEEP=/boot/mpire-kernels
+MAX_ENTRIES=10
+
+[ -d "$SNAPDIR" ] || exit 0
+# Never from a snapshot boot: its root is an overlay, not the installed system.
+grep -q 'mpire\.snapshot=' /proc/cmdline && exit 0
+snaps_subvol="$(findmnt -no FSROOT "$SNAPDIR" 2>/dev/null | sed 's|^/||')"
+[ -n "$snaps_subvol" ] || exit 0
+
+# Kernel command line: the system's own, minus its root subvolume.
+args=""
+for word in $GRUB_CMDLINE_LINUX $GRUB_CMDLINE_LINUX_DEFAULT; do
+    case "$word" in
+        rootflags=*|mpire.snapshot=*|systemd.volatile=*) ;;
+        *) args="$args $word" ;;
+    esac
+done
+case " $args " in
+    *" root="*) ;;
+    *) args="root=UUID=$GRUB_DEVICE_UUID$args" ;;
+esac
+
+# Version of the kernel currently installed for a kernel package (linux, linux-lts).
+current_kver() {
+    for dir in /usr/lib/modules/*/; do
+        [ -f "$dir/vmlinuz" ] && [ "$(cat "$dir/pkgbase" 2>/dev/null)" = "$1" ] && { basename "$dir"; return; }
+    done
+}
+
+xml() { sed -n "s|.*<$1>\\(.*\\)</$1>.*|\\1|p" "$2" | head -n 1; }
+
+boot_access="$(prepare_grub_to_access_device "$GRUB_DEVICE_BOOT" | sed 's/^/    /')"
+count=0
+for num in $(ls -1 "$SNAPDIR" | grep -E '^[0-9]+$' | sort -rn); do
+    info="$SNAPDIR/$num/info.xml"
+    root="$SNAPDIR/$num/snapshot"
+    [ -f "$info" ] && [ -d "$root/usr/lib/modules" ] || continue
+    type="$(xml type "$info")"
+    [ "$type" = post ] && continue
+
+    # The newest kernel package the snapshot has modules for, preferring linux.
+    kernel="" initrd=""
+    for pkgbase in linux linux-lts; do
+        for dir in "$root"/usr/lib/modules/*/; do
+            [ "$(cat "$dir/pkgbase" 2>/dev/null)" = "$pkgbase" ] || continue
+            kver="$(basename "$dir")"
+            if [ "$kver" = "$(current_kver "$pkgbase")" ] && [ -f "/boot/vmlinuz-$pkgbase" ]; then
+                kernel="/boot/vmlinuz-$pkgbase" initrd="/boot/initramfs-$pkgbase.img"
+            elif [ -f "$KEEP/$kver/vmlinuz" ] && [ -f "$KEEP/$kver/initramfs.img" ]; then
+                kernel="$KEEP/$kver/vmlinuz" initrd="$KEEP/$kver/initramfs.img"
+            else
+                continue
+            fi
+            break 2
+        done
+    done
+    if [ -z "$kernel" ]; then
+        echo "MpireOS snapshot $num: its kernel was not kept, leaving it out" >&2
+        continue
+    fi
+
+    when="$(date -d "$(xml date "$info") UTC" '+%b %-d, %Y %-I:%M %p' 2>/dev/null || xml date "$info")"
+    desc="$(xml description "$info")"
+    case "$type:$desc" in
+        single:*) title="${desc:-Snapshot}" ;;
+        *-Su*|*-Syu*|*mpire-update*) title="Before update" ;;
+        *) title="Before software changes" ;;
+    esac
+    title="$(printf '%s, %s' "$title" "$when" | tr -d "'\\\\")"
+
+    if [ $count -eq 0 ]; then
+        echo "Found MpireOS snapshots" >&2
+        echo "submenu 'MpireOS snapshots' --class mpireos --id mpireos-snapshots {"
+    fi
+    echo "Snapshot $num: $title ($kernel)" >&2
+    cat <<ENTRY
+  menuentry '$title' --class mpireos --id mpireos-snapshot-$num {
+$boot_access
+    echo 'Starting MpireOS from the snapshot of $when...'
+    linux $(make_system_path_relative_to_its_root "$kernel") $args rootflags=subvol=$snaps_subvol/$num/snapshot systemd.volatile=overlay mpire.snapshot=$num
+    initrd $(make_system_path_relative_to_its_root "$initrd")
+  }
+ENTRY
+    count=$((count + 1))
+    [ $count -lt $MAX_ENTRIES ] || break
+done
+[ $count -eq 0 ] || echo "}"

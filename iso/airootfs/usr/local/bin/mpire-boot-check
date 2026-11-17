@@ -10,6 +10,10 @@ report() {
     echo "<2>$1" > /dev/kmsg 2>/dev/null || true
     [ -w /dev/ttyS0 ] && echo "$1" > /dev/ttyS0 2>/dev/null || true
 }
+# Which root this boot uses: the installed system, or a snapshot from the
+# "MpireOS snapshots" boot menu (scripts/install-test.sh checks both).
+snap="$(grep -o 'mpire\.snapshot=[0-9]*' /proc/cmdline | cut -d= -f2)"
+report "MPIREOS_ROOT ${snap:+snapshot $snap}${snap:-system} $(findmnt -no FSTYPE /)"
 # The MpireOS login screen logs its QML errors to the journal; any error means
 # SDDM may be showing its fallback theme instead.
 greeter_errors() {

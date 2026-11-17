@@ -1,0 +1,13 @@
+# Runs after snap-pac's "post" snapshot (zz-snap-pac-post.hook), so the boot
+# menu lists the snapshot taken before this transaction.
+[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Target = *
+
+[Action]
+Description = Updating the MpireOS snapshots boot menu...
+When = PostTransaction
+Exec = /usr/lib/mpireos/mpire-boot-menu

@@ -93,8 +93,9 @@ Compression (`zstd`) is on by default.
 
 - **snapper** manages snapshots of `/`.
 - **snap-pac** takes a snapshot before and after every pacman transaction.
-- **grub-btrfs** adds snapshots to the boot menu, so a system that no longer boots can still be started from an earlier snapshot and rolled back.
-- Retention defaults: the last 10 update pairs plus weekly snapshots for a month. This can be changed in settings.
+- **The "MpireOS snapshots" boot menu** (`/etc/grub.d/41_mpire_snapshots`, from `mpire-base`) lists the snapshots taken before each change, so a system that no longer boots can still be started from an earlier one. `/boot` is the EFI partition and is not inside snapshots, so `mpire-keep-kernel` keeps the outgoing kernel in `/boot/mpire-kernels/<version>/` whenever a kernel is replaced, and each entry boots the kernel matching its snapshot's modules. Snapshots are read-only; they boot with `systemd.volatile=overlay`, so the session works normally and its changes are discarded at shutdown.
+- **`mpire-rollback`** makes the booted snapshot (or a numbered one) the system again: the current `@` is kept as `@before-rollback-<date>`, a writable copy of the snapshot becomes `@`, and its kernel goes back into `/boot`.
+- Retention: snapper keeps the last 20 snapshots (10 marked important). The boot menu shows the newest 10 that can still boot.
 
 GRUB is used instead of systemd-boot because snapshot booting is mature on GRUB. This can be revisited.
 
@@ -102,12 +103,12 @@ GRUB is used instead of systemd-boot because snapshot booting is mature on GRUB.
 
 Installed systems keep themselves up to date; nobody should need to reinstall to get a newer MpireOS.
 
-- **What moves:** each channel is a dated Arch snapshot. CI publishes the current date for each channel (`stable.channel`, `testing.channel`) alongside MpireOS's own packages in the `repo` release on GitHub. `mpire-update` reads the date for the system's channel, points `/etc/pacman.d/mpire-snapshot` at it (never backwards), and upgrades.
-- **MpireOS's own pieces update the same way.** Branding, defaults, the updater itself, and later the desktop are pacman packages in the `[mpire]` repository (`packages/`), so a change merged to `main` reaches every installed system on its next update.
+- **What moves:** each channel has a dated Arch snapshot and its own `[mpire]` repository: the `repo-testing` release on GitHub for testing, `repo` for stable. Each holds the packages plus `<channel>.channel`, the channel's snapshot date. `mpire-update` reads the date for the system's channel, points `/etc/pacman.d/mpire-snapshot` at it (never backwards) and `/etc/pacman.d/mpire-repo` at the channel's repository, and upgrades.
+- **MpireOS's own pieces update the same way.** Branding, defaults, the updater itself, the installer and the desktop are pacman packages in `[mpire]` (`packages/`). Every push to `main` that passes the boot and install tests is published to testing; the **Promote testing to stable** workflow then copies exactly those packages to stable. See [updates.md](updates.md).
 - **Safe by default:** snap-pac takes a Btrfs snapshot before and after the upgrade, keyrings update first, and if the database refresh fails the previous snapshot date is restored. If an upgrade breaks something, the "before" snapshot is in the boot menu.
-- **Automatic:** `mpire-update.timer` runs daily (20 minutes after boot, then every day, randomized by up to an hour), only on AC power, at low CPU and I/O priority. It also updates Flatpak apps. `AUTO=no` in `/etc/mpireos/update.conf` turns it off.
-- **Manual:** `mpire-update` (asks first), `mpire-update --check`, `mpire-update --yes`. A graphical updater in Settings will use the same tool.
-- **Signing:** packages and the repository database are signed in CI with the project key (`MPIRE_SIGNING_KEY` secret, public key in `mpire-keyring`). Until that key exists the repository is used with `SigLevel = Optional TrustedOnly`, and it must be switched to `Required` before any public release.
+- **Automatic:** `mpire-update.timer` runs daily (20 minutes after boot, then every day, randomized by up to an hour), only on AC power, at low CPU and I/O priority. It also updates Flatpak apps. `AUTO=no` in `/etc/mpireos/update.conf` turns it off. It does nothing on a snapshot boot.
+- **Manual:** `mpire-update` (asks first), `mpire-update --check`, `mpire-update --yes`, `mpire-update --channel testing|stable`. A graphical updater in Settings will use the same tool.
+- **Signing:** packages and the repository database are signed in CI with the project key (`MPIRE_SIGNING_KEY` secret, public key in `mpire-keyring`). Until that key exists `[mpire]` is used with `SigLevel = Optional TrustedOnly`. Once `mpire-keyring` carries the key, new ISOs and every installed system (on its next update) switch to `SigLevel = Required` by themselves, and CI refuses to publish unsigned packages.
 
 Running `pacman -Syu` directly still works and is still covered by snap-pac.
 
