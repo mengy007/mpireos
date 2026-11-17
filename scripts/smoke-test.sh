@@ -61,6 +61,9 @@ for ((t = 0; t < timeout; t += 5)); do
             # The system tray: the test apps' icons sit left of MpireOS's own.
             tray="${shot%.ppm}-tray.ppm"
             qemu_screenshot "$monitor" "$tray"
+            for c in 5B8DEF:Sync 7C66D6:Chat E6B072:Legacy-XEmbed; do
+                echo "tray icon ${c#*:}: $(qemu_find_color "$tray" "${c%%:*}" 30 || echo missing)"
+            done
             # Right-click the Sync app's icon (found by its color) for its menu,
             # then open the Speed Limit submenu.
             if xy="$(qemu_find_color "$tray" 5B8DEF 30)"; then

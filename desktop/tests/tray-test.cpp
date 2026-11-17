@@ -3,7 +3,7 @@
 // own QSystemTrayIcon, which publishes a StatusNotifierItem + dbusmenu, like
 // any Qt or KDE app.
 //
-//   mpire-tray-test [--name Sync] [--color "#5B8DEF"]
+//   mpire-tray-test [--title Sync] [--color "#5B8DEF"]
 //
 // Run it with DBUS_SESSION_BUS_ADDRESS=disabled: and QT_QPA_PLATFORM=xcb and Qt
 // falls back to an old-style XEmbed tray icon instead, which reaches the top
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     app.setQuitOnLastWindowClosed(false);
     QCommandLineParser cli;
     cli.addHelpOption();
-    const QCommandLineOption name(QStringLiteral("name"), QStringLiteral("The app's name."), QStringLiteral("name"), QStringLiteral("Sync"));
+    const QCommandLineOption name(QStringLiteral("title"), QStringLiteral("The app's name (not --name: Qt on X11 takes that one for itself)."), QStringLiteral("title"), QStringLiteral("Sync"));
     const QCommandLineOption color(QStringLiteral("color"), QStringLiteral("Icon color."), QStringLiteral("color"), QStringLiteral("#5B8DEF"));
     cli.addOptions({name, color});
     cli.process(app);
