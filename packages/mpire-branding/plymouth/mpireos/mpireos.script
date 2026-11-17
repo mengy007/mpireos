@@ -27,18 +27,14 @@ body_font = "Inter " + (12 * font_scale);
 # Backdrop: the desktop's pale teal-gray with soft light sweeps, cropped to fill.
 Window.SetBackgroundTopColor(0.957, 0.973, 0.976);      # #F4F8F9
 Window.SetBackgroundBottomColor(0.894, 0.929, 0.937);   # #E4EDEF
-bg_image = Image("background.png");
-bg_scale = Math.Max(screen_w / bg_image.GetWidth(), screen_h / bg_image.GetHeight());
-bg_image = bg_image.Scale(Math.Int(bg_image.GetWidth() * bg_scale + 1), Math.Int(bg_image.GetHeight() * bg_scale + 1));
-bg = Sprite(bg_image);
-bg.SetPosition(screen_x + Math.Int((screen_w - bg_image.GetWidth()) / 2),
-               screen_y + Math.Int((screen_h - bg_image.GetHeight()) / 2), -100);
+bg_source = Image("background.png");
+bg = Sprite();
+bg.SetZ(-100);
 
 # The mark and wordmark, a little above center.
 logo_image = Image("logo" + suffix + ".png");
 logo = Sprite(logo_image);
-logo.SetPosition(screen_x + Math.Int((screen_w - logo_image.GetWidth()) / 2),
-                 screen_y + Math.Int(screen_h * 0.42 - logo_image.GetHeight() / 2), 10);
+logo.SetZ(10);
 
 # Spinner: 36 frames, one full turn every 1.2 seconds (refresh runs at 50 Hz).
 for (i = 0; i < 36; i++) {
@@ -48,16 +44,20 @@ for (i = 0; i < 36; i++) {
         n = "" + i;
     spinner_frames[i] = Image("spinner-" + n + suffix + ".png");
 }
-spinner_y = screen_y + Math.Int(screen_h * 0.70);
 spinner = Sprite(spinner_frames[0]);
-spinner.SetPosition(screen_x + Math.Int((screen_w - spinner_frames[0].GetWidth()) / 2),
-                    spinner_y - Math.Int(spinner_frames[0].GetHeight() / 2), 10);
+spinner.SetZ(10);
 # Functions read globals freely, but must write them as global.name.
 ticks = 0;
 fade_in = 0;
 
 fun refresh() {
     global.ticks++;
+    if (Window.GetWidth() != screen_w || Window.GetHeight() != screen_h)
+        layout();
+    # A screen that shows up late (legacy BIOS) is only painted where something
+    # changes, so repaint the whole backdrop once a second.
+    if (ticks % 50 == 1)
+        bg.SetImage(bg_image);
     spinner.SetImage(spinner_frames[Math.Int(ticks * 36 / 60) % 36]);
     # Fade the mark in over the first half second.
     if (fade_in < 1) {
@@ -76,19 +76,42 @@ field_image = Image("field" + suffix + ".png");
 bullet_image = Image("bullet" + suffix + ".png");
 lock_image = Image("lock" + suffix + ".png");
 field = Sprite(field_image);
-field_x = screen_x + Math.Int((screen_w - field_image.GetWidth()) / 2);
-field_y = spinner_y - Math.Int(field_image.GetHeight() / 2);
-field.SetPosition(field_x, field_y, 20);
+field.SetZ(20);
 lock = Sprite(lock_image);
-# The field image has a shadow margin; its inner pill starts 18px (1x) in.
-pill_left = field_x + 18 * font_scale;
-lock.SetPosition(pill_left + 16 * font_scale,
-                 field_y + Math.Int((field_image.GetHeight() - lock_image.GetHeight()) / 2) - 2 * font_scale, 21);
+lock.SetZ(21);
 prompt_sprite = Sprite();
 prompt_sprite.SetZ(21);
 entry_sprite = Sprite();
 entry_sprite.SetZ(21);
 bullet_count = 0;
+
+# Everything is placed by layout(), which runs again when the screen changes:
+# on legacy BIOS the graphics driver arrives a moment after the splash starts.
+fun layout() {
+    global.screen_w = Window.GetWidth();
+    global.screen_h = Window.GetHeight();
+    global.screen_x = Window.GetX();
+    global.screen_y = Window.GetY();
+    bg_scale = Math.Max(screen_w / bg_source.GetWidth(), screen_h / bg_source.GetHeight());
+    global.bg_image = bg_source.Scale(Math.Int(bg_source.GetWidth() * bg_scale + 1), Math.Int(bg_source.GetHeight() * bg_scale + 1));
+    bg.SetImage(bg_image);
+    bg.SetPosition(screen_x + Math.Int((screen_w - bg_image.GetWidth()) / 2),
+                   screen_y + Math.Int((screen_h - bg_image.GetHeight()) / 2), -100);
+    # The mark and wordmark, a little above center.
+    logo.SetPosition(screen_x + Math.Int((screen_w - logo_image.GetWidth()) / 2),
+                     screen_y + Math.Int(screen_h * 0.42 - logo_image.GetHeight() / 2), 10);
+    global.spinner_y = screen_y + Math.Int(screen_h * 0.70);
+    spinner.SetPosition(screen_x + Math.Int((screen_w - spinner_frames[0].GetWidth()) / 2),
+                        spinner_y - Math.Int(spinner_frames[0].GetHeight() / 2), 10);
+    global.field_x = screen_x + Math.Int((screen_w - field_image.GetWidth()) / 2);
+    global.field_y = spinner_y - Math.Int(field_image.GetHeight() / 2);
+    field.SetPosition(field_x, field_y, 20);
+    # The field image has a shadow margin; its inner pill starts 18px (1x) in.
+    global.pill_left = field_x + 18 * font_scale;
+    lock.SetPosition(pill_left + 16 * font_scale,
+                     field_y + Math.Int((field_image.GetHeight() - lock_image.GetHeight()) / 2) - 2 * font_scale, 21);
+}
+layout();
 
 fun hide_dialog() {
     field.SetOpacity(0);

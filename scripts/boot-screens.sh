@@ -165,13 +165,13 @@ if [[ -n $install_work && -f $install_work/disk.qcow2 && -n $ovmf_code ]]; then
         sleep 1
         grab "$out/boot-installed-menu.ppm"
         echo "boot-installed-menu: menu"
-        # Third entry: "MpireOS snapshots".
-        qemu_key "$monitor" down; qemu_key "$monitor" down; qemu_key "$monitor" ret
+        # "MpireOS snapshots" is the last entry (firmware entries come before it).
+        qemu_key "$monitor" end; qemu_key "$monitor" ret
         sleep 2
         grab "$out/boot-installed-snapshots.ppm"
         qemu_key "$monitor" esc
         sleep 1
-        qemu_key "$monitor" up; qemu_key "$monitor" up; qemu_key "$monitor" ret
+        qemu_key "$monitor" home; qemu_key "$monitor" ret
     else
         echo "boot-installed-menu: menu not caught"
     fi
