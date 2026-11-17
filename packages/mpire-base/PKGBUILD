@@ -1,6 +1,6 @@
 # Maintainer: MpireOS contributors
 pkgname=mpire-base
-pkgver=0.2.1
+pkgver=0.2.2
 pkgrel=1
 pkgdesc="MpireOS identity, defaults, automatic updates, and snapshot rollback"
 arch=('any')

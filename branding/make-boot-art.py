@@ -31,11 +31,12 @@ SYSLINUX = REPO / "iso/syslinux"
 ICONS = REPO / "packages/mpire-branding/icons"
 LOGO = REPO / "branding/logo"
 
-# Palette (desktop/style/MpireOS/Style/Theme.qml, from mpire-tech.com).
+# Palette (desktop/style/MpireOS/Style/Theme.qml; accent follows the logo cyan).
 BACKDROP = "#E4EDEF"
 BACKDROP_HI = "#F4F8F9"
-ACCENT = "#269CA1"
-ACCENT_DEEP = "#094551"
+ACCENT = "#00B4C1"
+ACCENT_STRONG = "#0096A3"   # selected boot entries: white text needs the deeper cyan
+ACCENT_DEEP = "#054F5C"
 INK = "#0B1F25"
 TEXT2 = "#4F5D6B"
 TEXT3 = "#8B95A3"
@@ -222,7 +223,7 @@ def grub():
     nine_slice(card, "menu_", GRUB, 18)
     # Selected entry: a teal pill (accent -> slightly deeper).
     # Its corner pieces are drawn around the entry's own box, so keep them small.
-    sel = rounded((40, 24), 7, rgb(ACCENT))
+    sel = rounded((40, 24), 7, rgb(ACCENT_STRONG))
     nine_slice(sel, "select_", GRUB, 6)
     # Scrollbar thumb and track.
     # Terminal box (for the GRUB command line and "Loading" messages).

@@ -10,7 +10,7 @@ Five principles:
 
 1. **Space first.** Generous margins and padding. When a screen feels busy, remove something before shrinking anything.
 2. **Soft, not flat.** White surfaces float on a pale teal-gray backdrop with large radii and diffuse, low-contrast shadows. No hard borders where a shadow or a tint will do.
-3. **One accent.** A single teal accent marks selection, focus, and the primary action. Everything else is neutral or a muted pastel.
+3. **One accent.** A single cyan accent marks selection, focus, and the primary action. Everything else is neutral or a muted pastel.
 4. **Big, light numbers; small, quiet labels.** Dates, times, and timers are large and light-weight. Section labels are small capitals with wide tracking.
 5. **Warm words.** Copy is short, human, and kind ("A little space for everything.", "One thing at a time."). Never cute at the expense of clarity.
 
@@ -28,7 +28,7 @@ Light is the default theme. Dark is a full theme, not an inversion (see below).
 | `surface` | `#FFFFFF` | Windows, cards, widgets |
 | `surfaceSunken` | `#F7F9FB` | Sidebars, inset areas, input fields |
 | `surfaceHover` | `#F1F7F8` | Hovered rows and items |
-| `selection` | `#EBF6F7` | Selected sidebar item, selected row |
+| `selection` | `#E2F7F9` | Selected sidebar item, selected row |
 | `divider` | `#EDF0F3` | Hairlines between rows and sections |
 | `border` | `#E6EAEF` | Card outlines, only where a shadow alone isn't enough |
 | `text` | `#0B1F25` | Primary text |
@@ -37,15 +37,16 @@ Light is the default theme. Dark is a full theme, not an inversion (see below).
 
 ### Accent
 
-Taken from mpire-tech.com (November 2026): Mpire teal `#269CA1` fading to deep teal `#094551` on primary buttons, ink `#0B1F25` for text.
+Follows the logo's cyan (November 2026; it replaced the earlier mpire-tech.com teal `#269CA1`). The accent is a step deeper than the logo cyan `#00CBD7` so white text on buttons stays readable; primary buttons fade from `accent` to `accentDeep`. Ink `#0B1F25` for text.
 
 | Token | Value | Use |
 |---|---|---|
-| `accent` | `#269CA1` | Primary buttons, selection marker, focus ring, today in the calendar |
-| `accentHover` | `#2FAAAF` | Hover on accent elements |
-| `accentPressed` | `#1A7F86` | Pressed |
-| `accentSoft` | `#EBF6F7` | Tinted backgrounds for selected and accent-related items |
-| `accentText` | `#094551` | Accent-colored text and links on light surfaces |
+| `accent` | `#00B4C1` | Primary buttons, selection marker, focus ring, today in the calendar |
+| `accentHover` | `#10C2CE` | Hover on accent elements |
+| `accentPressed` | `#0096A3` | Pressed; also the selected boot menu entry (white text) |
+| `accentSoft` | `#E2F7F9` | Tinted backgrounds for selected and accent-related items |
+| `accentText` | `#006975` | Accent-colored text and links on light surfaces |
+| `accentDeep` | `#054F5C` | End of accent gradients |
 
 ### Logo colors
 

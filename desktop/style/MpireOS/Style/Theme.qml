@@ -11,7 +11,7 @@ QtObject {
     readonly property color surface: "#FFFFFF"
     readonly property color surfaceSunken: "#F7F9FB"
     readonly property color surfaceHover: "#F1F7F8"
-    readonly property color selection: "#EBF6F7"
+    readonly property color selection: "#E2F7F9"
     readonly property color divider: "#EDF0F3"
     readonly property color border: "#E6EAEF"
     readonly property color text: "#0B1F25"
@@ -24,12 +24,12 @@ QtObject {
     // Accent
     readonly property color brand: "#00CBD7"           // logo cyan (branding/logo): the mark and "OS"
     readonly property color brandNavy: "#062331"       // logo navy
-    readonly property color accent: "#269CA1"
-    readonly property color accentHover: "#2FAAAF"
-    readonly property color accentPressed: "#1A7F86"
-    readonly property color accentSoft: "#EBF6F7"
-    readonly property color accentText: "#094551"
-    readonly property color accentDeep: "#094551"      // end of accent gradients (mpire-tech.com)
+    readonly property color accent: "#00B4C1"
+    readonly property color accentHover: "#10C2CE"
+    readonly property color accentPressed: "#0096A3"
+    readonly property color accentSoft: "#E2F7F9"
+    readonly property color accentText: "#006975"
+    readonly property color accentDeep: "#054F5C"      // end of accent gradients
     readonly property color controlOff: "#D3DAE1"      // switch track, unselected ring
     readonly property color scrim: "#660B1F25"         // behind popups
 
