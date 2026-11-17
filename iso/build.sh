@@ -96,6 +96,11 @@ echo "bootmodes=('bios.syslinux' 'uefi.grub')" >> "$profile/profiledef.sh"
 sed -i -E 's/^HOOKS=\((base udev)/HOOKS=(\1 plymouth/' "$profile/airootfs/etc/mkinitcpio.conf.d/archiso.conf"
 grep -q '^HOOKS=(base udev plymouth' "$profile/airootfs/etc/mkinitcpio.conf.d/archiso.conf" \
     || { echo "couldn't add plymouth to the live initramfs hooks" >&2; exit 1; }
+# On UEFI the splash draws on the firmware's framebuffer. Legacy BIOS has none, so
+# bring the virtual machine graphics drivers (small, unlike the full kms hook
+# with its GPU firmware); on other BIOS PCs the splash appears once the root
+# file system loads the graphics driver.
+echo 'MODULES=(bochs virtio_gpu qxl vmwgfx)' >> "$profile/airootfs/etc/mkinitcpio.conf.d/archiso.conf"
 
 echo "==> Building ISO"
 mkarchiso -v -w "$work/build" -o "$out" "$profile"

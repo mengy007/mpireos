@@ -111,6 +111,7 @@ shoot_splash() {
     local name=$1 seconds=$2 seen=0 t
     for ((t = 0; t < seconds; t += 2)); do
         grab "$out/frame.ppm"
+        [[ $t -eq 10 ]] && cp "$out/frame.ppm" "$out/boot-$name-at10s.ppm"
         if [[ $(classify "$out/frame.ppm") == splash ]]; then
             seen=$((seen + 1))
             cp "$out/frame.ppm" "$out/boot-$name.ppm"
@@ -119,7 +120,11 @@ shoot_splash() {
         sleep 0.5
     done
     rm -f "$out/frame.ppm"
-    if [[ $seen -gt 0 ]]; then echo "boot-$name: splash after ~${t}s"; else echo "boot-$name: no splash seen in ${seconds}s"; fi
+    if [[ $seen -gt 0 ]]; then
+        echo "boot-$name: splash after ~${t}s"; rm -f "$out/boot-$name-at10s.ppm"
+    else
+        echo "boot-$name: no splash seen in ${seconds}s (boot-$name-at10s shows the screen 10 s in)"
+    fi
 }
 
 print_shots() {
@@ -182,6 +187,6 @@ if [[ -n $install_work && -f $install_work/disk.qcow2 && -n $ovmf_code ]]; then
     stop_vm
 fi
 
-print_shots bios-menu bios-splash uefi-menu uefi-splash \
+print_shots bios-menu bios-splash bios-splash-at10s uefi-menu uefi-splash uefi-splash-at10s \
     installed-menu installed-snapshots installed-splash installed-login
 exit 0
