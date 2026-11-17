@@ -1,14 +1,18 @@
 #!/bin/sh
-# Writes MpireOS's os-release. Run by a pacman hook after "filesystem" changes.
+# Writes MpireOS's os-release and console greeting (/etc/issue). Run by a pacman
+# hook after "filesystem" changes, before the initramfs is rebuilt, so the
+# initramfs greets with "Welcome to MpireOS!" too.
 cat > /usr/lib/os-release <<'OSR'
 NAME="MpireOS"
 PRETTY_NAME="MpireOS"
 ID=mpireos
 ID_LIKE=arch
 BUILD_ID=rolling
-ANSI_COLOR="38;2;23;147;209"
+ANSI_COLOR="38;2;38;156;161"
 HOME_URL="https://github.com/mengy007/mpireos"
 DOCUMENTATION_URL="https://github.com/mengy007/mpireos/tree/main/docs"
 BUG_REPORT_URL="https://github.com/mengy007/mpireos/issues"
 LOGO=mpireos
 OSR
+# The text console's greeting (filesystem ships one that says "Arch Linux").
+printf 'MpireOS \\r (\\l)\n\n' > /etc/issue

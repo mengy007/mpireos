@@ -1,17 +1,17 @@
 # Maintainer: MpireOS contributors
 pkgname=mpire-base
-pkgver=0.2.0
+pkgver=0.2.1
 pkgrel=1
 pkgdesc="MpireOS identity, defaults, automatic updates, and snapshot rollback"
 arch=('any')
 url="https://github.com/mengy007/mpireos"
 license=('GPL-3.0-or-later')
-depends=('pacman' 'curl' 'sudo' 'btrfs-progs' 'snapper' 'snap-pac' 'grub' 'mpire-keyring')
+depends=('pacman' 'curl' 'sudo' 'btrfs-progs' 'snapper' 'snap-pac' 'grub' 'mpire-keyring' 'mpire-branding')
 optdepends=('flatpak: update Flatpak apps too')
 backup=('etc/mpireos/update.conf' 'etc/pacman.d/mpire-snapshot' 'etc/pacman.d/mpire-repo'
         'etc/sddm.conf.d/20-mpire-wayland.conf')
 install=mpire-base.install
-source=('mpire-os-release' '90-mpire-os-release.hook' 'mpire-update' 'mpire-update.service'
+source=('mpire-os-release' '10-mpire-os-release.hook' 'mpire-update' 'mpire-update.service'
         'mpire-update.timer' 'mpireos.preset' 'update.conf' 'snapshot' 'mpire-repo'
         '20-mpire-wayland.conf' 'mpire-rollback' 'mpire-keep-kernel' 'mpire-boot-menu'
         '41_mpire_snapshots' '00-mpire-keep-kernel.hook' 'zzz-mpire-boot-menu.hook'
@@ -21,7 +21,7 @@ sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP
 
 package() {
     install -Dm755 mpire-os-release "$pkgdir/usr/lib/mpireos/mpire-os-release"
-    install -Dm644 90-mpire-os-release.hook "$pkgdir/usr/share/libalpm/hooks/90-mpire-os-release.hook"
+    install -Dm644 10-mpire-os-release.hook "$pkgdir/usr/share/libalpm/hooks/10-mpire-os-release.hook"
     install -Dm755 mpire-update "$pkgdir/usr/bin/mpire-update"
     install -Dm644 mpire-update.service "$pkgdir/usr/lib/systemd/system/mpire-update.service"
     install -Dm644 mpire-update.timer "$pkgdir/usr/lib/systemd/system/mpire-update.timer"

@@ -30,7 +30,7 @@ Status: draft, v0.0. This document describes how MpireOS is built and why. Open 
 ├─────────────────────────────────────────────────────────┤
 │ Arch Linux packages, from a tested, dated snapshot       │
 ├─────────────────────────────────────────────────────────┤
-│ Btrfs + snapper + grub-btrfs (rollback)                  │
+│ Btrfs + snapper + MpireOS snapshot boot menu (rollback)  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -98,6 +98,18 @@ Compression (`zstd`) is on by default.
 - Retention: snapper keeps the last 20 snapshots (10 marked important). The boot menu shows the newest 10 that can still boot.
 
 GRUB is used instead of systemd-boot because snapshot booting is mature on GRUB. This can be revisited.
+
+### The boot look
+
+Everything between the firmware and the login screen carries the MpireOS look (the design system's palette, the mark, and Inter). The artwork is drawn by `branding/make-boot-art.py` and committed, so builds never need it.
+
+| Stage | Live ISO | Installed system |
+|---|---|---|
+| Boot menu | BIOS: SYSLINUX `vesamenu` over our `splash.png` (`iso/syslinux`). UEFI: GRUB with the MpireOS theme (`iso/grub`); systemd-boot can't be themed. | GRUB with the MpireOS theme, hidden unless a key is pressed (Esc, F4 or Shift); the "MpireOS snapshots" submenu uses it too. Entries read "MpireOS", without GRUB's "Loading Linux" lines. |
+| Splash | Plymouth `mpireos` theme from the live initramfs (`plymouth` hook) | Same, from the initramfs (`plymouth` hook), including the disk-password screen when the disk is encrypted |
+| Text | `/etc/os-release` and `/etc/issue` say MpireOS, so systemd greets with "Welcome to MpireOS!" in MpireOS teal | Same |
+
+`mpire-branding` ships the Plymouth theme, the GRUB theme (copied to `/boot/grub/themes/mpireos`, which GRUB can read even when the system disk is encrypted), and `mpire-boot-theme`, which pacman runs again whenever GRUB or Plymouth update. "Start MpireOS and show start-up details" in the ISO menu boots without the splash for troubleshooting.
 
 ### `mpire-update` and automatic updates
 

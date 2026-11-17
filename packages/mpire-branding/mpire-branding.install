@@ -1,0 +1,32 @@
+# Systems that update to mpire-branding get the splash and themed boot menu
+# without reinstalling. On the live ISO build (no /boot/grub/grub.cfg yet) only
+# the Plymouth theme is chosen; mkarchiso builds the initramfs afterwards.
+apply() {
+    /usr/lib/mpireos/mpire-boot-theme
+    # A snapshot boot runs from a throwaway copy; leave /boot alone.
+    grep -q 'mpire\.snapshot=' /proc/cmdline 2>/dev/null && return 0
+
+    # Installed MpireOS: start Plymouth from the initramfs, then rebuild it.
+    conf=/etc/mkinitcpio.conf.d/mpireos.conf
+    if [ -f "$conf" ] && ! grep -q '^HOOKS=(.*\bplymouth\b' "$conf"; then
+        sed -i -E 's/^(HOOKS=\(.*\bsystemd\b)/\1 plymouth/' "$conf"
+        mkinitcpio -P >/dev/null 2>&1 || echo "mpire-branding: mkinitcpio failed; run 'sudo mkinitcpio -P'"
+    elif [ -f "$conf" ] && [ "$1" = upgrade ]; then
+        # New splash artwork goes into the initramfs.
+        mkinitcpio -P >/dev/null 2>&1 || echo "mpire-branding: mkinitcpio failed; run 'sudo mkinitcpio -P'"
+    fi
+    if [ -f /boot/grub/grub.cfg ] && [ -f /etc/default/grub ]; then
+        grep -q '\bsplash\b' /etc/default/grub || \
+            sed -i -E 's/^(GRUB_CMDLINE_LINUX_DEFAULT=")/\1splash /' /etc/default/grub
+        grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 || \
+            echo "mpire-branding: couldn't refresh the boot menu; run 'sudo grub-mkconfig -o /boot/grub/grub.cfg'"
+    fi
+}
+
+post_install() {
+    apply install
+}
+
+post_upgrade() {
+    apply upgrade
+}

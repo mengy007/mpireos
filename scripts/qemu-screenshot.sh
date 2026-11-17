@@ -12,9 +12,14 @@ s.sendall(f"screendump {sys.argv[2]}\n".encode())
 time.sleep(3)
 s.close()
 PY
-    if [[ -s $shot ]]; then
-        echo "SCREENSHOT_BEGIN $(basename "$shot").gz"
-        gzip -c "$shot" | base64 -w 0
+    qemu_screenshot_print "$shot"
+}
+
+# qemu_screenshot_print <shot.ppm>: prints a saved screenshot to the log.
+qemu_screenshot_print() {
+    if [[ -s $1 ]]; then
+        echo "SCREENSHOT_BEGIN $(basename "$1").gz"
+        gzip -c "$1" | base64 -w 0
         echo
         echo "SCREENSHOT_END"
     fi

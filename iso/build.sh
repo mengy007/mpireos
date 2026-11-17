@@ -81,12 +81,21 @@ file_permissions+=(
 )
 PERMS
 
-# Boot menus: MpireOS naming, and a serial console so CI can watch the boot.
-find "$profile"/{syslinux,grub,efiboot} -type f \( -name '*.cfg' -o -name '*.conf' \) 2>/dev/null | while read -r f; do
-    sed -i -e 's/Arch Linux install medium/MpireOS live/g' \
-           -e 's/Arch Linux/MpireOS/g' \
-           -e '/archisobasedir=/ s/$/ console=tty0 console=ttyS0,115200/' "$f"
-done
+# Boot menus: MpireOS's own, in place of releng's. BIOS uses SYSLINUX with our
+# splash (iso/syslinux); UEFI uses GRUB with the MpireOS theme (iso/grub plus
+# the theme from mpire-branding), since systemd-boot can't be themed.
+# Entries start the live system with the Plymouth splash and a serial console
+# so CI can watch the boot.
+rm -rf "$profile"/{syslinux,grub,efiboot}
+cp -a "$repo/iso/syslinux" "$repo/iso/grub" "$profile/"
+mkdir -p "$profile/grub/themes"
+cp -a "$repo/packages/mpire-branding/grub/mpireos" "$profile/grub/themes/"
+echo "bootmodes=('bios.syslinux' 'uefi.grub')" >> "$profile/profiledef.sh"
+
+# The live system's initramfs starts the splash too.
+sed -i -E 's/^HOOKS=\((base udev)/HOOKS=(\1 plymouth/' "$profile/airootfs/etc/mkinitcpio.conf.d/archiso.conf"
+grep -q '^HOOKS=(base udev plymouth' "$profile/airootfs/etc/mkinitcpio.conf.d/archiso.conf" \
+    || { echo "couldn't add plymouth to the live initramfs hooks" >&2; exit 1; }
 
 echo "==> Building ISO"
 mkarchiso -v -w "$work/build" -o "$out" "$profile"

@@ -1,4 +1,5 @@
 # Keep MpireOS identity when the "filesystem" package installs or upgrades.
+# Named 10-* so it runs before 90-mkinitcpio-install.hook (hooks run in name order).
 [Trigger]
 Operation = Install
 Operation = Upgrade

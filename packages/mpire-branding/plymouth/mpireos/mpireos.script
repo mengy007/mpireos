@@ -1,0 +1,188 @@
+# MpireOS boot splash (Plymouth "script" module).
+# The MpireOS mark on the desktop backdrop, a teal spinner below it, and, when
+# the disk is encrypted, a friendly password field in place of the spinner.
+# Artwork comes from branding/make-boot-art.py.
+
+screen_w = Window.GetWidth();
+screen_h = Window.GetHeight();
+screen_x = Window.GetX();
+screen_y = Window.GetY();
+
+# Sharper artwork on high-density screens.
+if (screen_w >= 2560 || screen_h >= 1600)
+    suffix = "@2x";
+else
+    suffix = "";
+if (suffix == "@2x")
+    font_scale = 2;
+else
+    font_scale = 1;
+
+ink.r = 0.043; ink.g = 0.122; ink.b = 0.145;       # #0B1F25
+muted.r = 0.310; muted.g = 0.365; muted.b = 0.420; # #4F5D6B
+danger.r = 0.878; danger.g = 0.416; danger.b = 0.478;  # #E06A7A
+small_font = "Inter " + (11 * font_scale);
+body_font = "Inter " + (12 * font_scale);
+
+# Backdrop: the desktop's pale teal-gray with soft light sweeps, cropped to fill.
+Window.SetBackgroundTopColor(0.957, 0.973, 0.976);      # #F4F8F9
+Window.SetBackgroundBottomColor(0.894, 0.929, 0.937);   # #E4EDEF
+bg_image = Image("background.png");
+bg_scale = Math.Max(screen_w / bg_image.GetWidth(), screen_h / bg_image.GetHeight());
+bg_image = bg_image.Scale(Math.Int(bg_image.GetWidth() * bg_scale + 1), Math.Int(bg_image.GetHeight() * bg_scale + 1));
+bg = Sprite(bg_image);
+bg.SetPosition(screen_x + Math.Int((screen_w - bg_image.GetWidth()) / 2),
+               screen_y + Math.Int((screen_h - bg_image.GetHeight()) / 2), -100);
+
+# The mark and wordmark, a little above center.
+logo_image = Image("logo" + suffix + ".png");
+logo = Sprite(logo_image);
+logo.SetPosition(screen_x + Math.Int((screen_w - logo_image.GetWidth()) / 2),
+                 screen_y + Math.Int(screen_h * 0.42 - logo_image.GetHeight() / 2), 10);
+
+# Spinner: 36 frames, one full turn every 1.2 seconds (refresh runs at 50 Hz).
+for (i = 0; i < 36; i++) {
+    if (i < 10)
+        n = "0" + i;
+    else
+        n = "" + i;
+    spinner_frames[i] = Image("spinner-" + n + suffix + ".png");
+}
+spinner_y = screen_y + Math.Int(screen_h * 0.70);
+spinner = Sprite(spinner_frames[0]);
+spinner.SetPosition(screen_x + Math.Int((screen_w - spinner_frames[0].GetWidth()) / 2),
+                    spinner_y - Math.Int(spinner_frames[0].GetHeight() / 2), 10);
+# Functions read globals freely, but must write them as global.name.
+ticks = 0;
+fade_in = 0;
+
+fun refresh() {
+    global.ticks++;
+    spinner.SetImage(spinner_frames[Math.Int(ticks * 36 / 60) % 36]);
+    # Fade the mark in over the first half second.
+    if (fade_in < 1) {
+        global.fade_in = Math.Min(1, fade_in + 0.04);
+        logo.SetOpacity(fade_in);
+        spinner.SetOpacity(fade_in);
+    }
+}
+Plymouth.SetRefreshFunction(refresh);
+logo.SetOpacity(0);
+spinner.SetOpacity(0);
+
+# ---------------------------------------------------------------- password and questions
+
+field_image = Image("field" + suffix + ".png");
+bullet_image = Image("bullet" + suffix + ".png");
+lock_image = Image("lock" + suffix + ".png");
+field = Sprite(field_image);
+field_x = screen_x + Math.Int((screen_w - field_image.GetWidth()) / 2);
+field_y = spinner_y - Math.Int(field_image.GetHeight() / 2);
+field.SetPosition(field_x, field_y, 20);
+lock = Sprite(lock_image);
+# The field image has a shadow margin; its inner pill starts 18px (1x) in.
+pill_left = field_x + 18 * font_scale;
+lock.SetPosition(pill_left + 16 * font_scale,
+                 field_y + Math.Int((field_image.GetHeight() - lock_image.GetHeight()) / 2) - 2 * font_scale, 21);
+prompt_sprite = Sprite();
+prompt_sprite.SetZ(21);
+entry_sprite = Sprite();
+entry_sprite.SetZ(21);
+bullet_count = 0;
+
+fun hide_dialog() {
+    field.SetOpacity(0);
+    lock.SetOpacity(0);
+    prompt_sprite.SetOpacity(0);
+    entry_sprite.SetOpacity(0);
+    for (i = 0; i < bullet_count; i++)
+        bullets[i].SetOpacity(0);
+}
+
+fun show_prompt(prompt) {
+    spinner.SetOpacity(0);
+    global.fade_in = 1;
+    field.SetOpacity(1);
+    lock.SetOpacity(1);
+    if (prompt == "")
+        prompt = "Enter the password for this computer's disk";
+    prompt_image = Image.Text(prompt, muted.r, muted.g, muted.b, 1, body_font);
+    prompt_sprite.SetImage(prompt_image);
+    prompt_sprite.SetPosition(screen_x + Math.Int((screen_w - prompt_image.GetWidth()) / 2),
+                              field_y - prompt_image.GetHeight() - 4 * font_scale, 21);
+    prompt_sprite.SetOpacity(1);
+}
+
+fun display_password(prompt, count) {
+    show_prompt(prompt);
+    entry_sprite.SetOpacity(0);
+    text_left = pill_left + 46 * font_scale;
+    max_bullets = Math.Int((field_image.GetWidth() - 36 * font_scale - 62 * font_scale) / (16 * font_scale));
+    shown = Math.Min(count, max_bullets);
+    for (i = 0; i < Math.Max(shown, bullet_count); i++) {
+        if (!global.bullets[i]) {
+            global.bullets[i] = Sprite(bullet_image);
+            global.bullets[i].SetZ(22);
+        }
+        if (i < shown) {
+            bullets[i].SetPosition(text_left + i * 16 * font_scale,
+                                   field_y + Math.Int((field_image.GetHeight() - bullet_image.GetHeight()) / 2) - 2 * font_scale, 22);
+            bullets[i].SetOpacity(1);
+        } else {
+            bullets[i].SetOpacity(0);
+        }
+    }
+    global.bullet_count = Math.Max(shown, bullet_count);
+}
+
+fun display_question(prompt, entry) {
+    show_prompt(prompt);
+    for (i = 0; i < bullet_count; i++)
+        bullets[i].SetOpacity(0);
+    entry_image = Image.Text(entry, ink.r, ink.g, ink.b, 1, body_font);
+    entry_sprite.SetImage(entry_image);
+    entry_sprite.SetPosition(pill_left + 46 * font_scale,
+                             field_y + Math.Int((field_image.GetHeight() - entry_image.GetHeight()) / 2) - 2 * font_scale, 22);
+    entry_sprite.SetOpacity(1);
+}
+
+fun display_normal() {
+    hide_dialog();
+    spinner.SetOpacity(1);
+}
+
+Plymouth.SetDisplayPasswordFunction(display_password);
+Plymouth.SetDisplayQuestionFunction(display_question);
+Plymouth.SetDisplayNormalFunction(display_normal);
+hide_dialog();
+
+# ---------------------------------------------------------------- messages and updates
+
+message_sprite = Sprite();
+message_sprite.SetZ(30);
+
+fun show_message(text) {
+    message_image = Image.Text(text, muted.r, muted.g, muted.b, 1, small_font);
+    message_sprite.SetImage(message_image);
+    message_sprite.SetPosition(screen_x + Math.Int((screen_w - message_image.GetWidth()) / 2),
+                               screen_y + Math.Int(screen_h * 0.86), 30);
+    message_sprite.SetOpacity(1);
+}
+
+fun hide_message(text) {
+    message_sprite.SetOpacity(0);
+}
+
+Plymouth.SetMessageFunction(show_message);
+Plymouth.SetHideMessageFunction(hide_message);
+
+mode = Plymouth.GetMode();
+if (mode == "updates" || mode == "system-upgrade")
+    show_message("Installing updates. Please keep your computer on.");
+if (mode == "firmware-upgrade")
+    show_message("Updating firmware. Please keep your computer on.");
+
+fun system_update(progress) {
+    show_message("Installing updates, " + Math.Int(progress) + "%. Please keep your computer on.");
+}
+Plymouth.SetSystemUpdateFunction(system_update);

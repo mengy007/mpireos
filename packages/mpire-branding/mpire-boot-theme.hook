@@ -1,0 +1,14 @@
+# Keep MpireOS's boot look when GRUB or Plymouth are installed or upgraded
+# (a GRUB upgrade restores its stock /etc/grub.d/10_linux). Runs before
+# zzz-mpire-boot-menu.hook, which regenerates grub.cfg.
+[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Target = grub
+Target = plymouth
+
+[Action]
+Description = Applying the MpireOS boot look...
+When = PostTransaction
+Exec = /usr/lib/mpireos/mpire-boot-theme

@@ -8,15 +8,18 @@ The live ISO is Arch Linux's `releng` archiso profile with MpireOS layered on to
 | `packages.x86_64` | Packages added on top of releng's list |
 | `pacman.conf.in` | Pacman config pinned to the channel's Arch snapshot |
 | `airootfs/` | Files copied into the live system (live user, SDDM autologin, branding) |
+| `syslinux/` | The BIOS boot menu (MpireOS look; `splash.png` from `../branding/make-boot-art.py`) |
+| `grub/` | The UEFI boot menu, using the GRUB theme from `../packages/mpire-branding` |
 | `../channels/` | The Arch snapshot date for each channel |
 | `../scripts/smoke-test.sh` | Boots the ISO in QEMU and waits for the desktop |
+| `../scripts/boot-screens.sh` | Screenshots of each boot stage (menus, splash) on BIOS, UEFI and an installed disk |
 
 ## Building locally
 
 On Arch Linux, as root:
 
 ```sh
-pacman -S --needed archiso
+pacman -S --needed archiso grub
 ./iso/build.sh stable out
 ```
 

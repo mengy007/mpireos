@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=MpireOS
+Description=The MpireOS boot splash: the MpireOS mark on the desktop backdrop, with a teal spinner.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/mpireos
+ScriptFile=/usr/share/plymouth/themes/mpireos/mpireos.script

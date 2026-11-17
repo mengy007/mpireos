@@ -1,0 +1,39 @@
+#!/bin/sh
+# Applies MpireOS's boot look: the Plymouth splash and the GRUB theme.
+# Run by pacman (mpire-branding's install script, and mpire-boot-theme.hook when
+# GRUB or Plymouth change), and by the installer. Safe to run more than once.
+# Does not rebuild the initramfs or grub.cfg: callers do that when needed.
+
+# Plymouth: our splash, unless someone picked another theme on purpose.
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+    case "$(plymouth-set-default-theme 2>/dev/null)" in
+        ""|bgrt|spinner|text|details|tribar) plymouth-set-default-theme mpireos ;;
+    esac
+fi
+
+# Menu entries read "MpireOS", not "MpireOS Linux", and starting the system
+# doesn't print GRUB's "Loading Linux ..." lines over the splash.
+if [ -f /etc/grub.d/10_linux ]; then
+    sed -i -E \
+        -e 's/^(\s*OS="\$\{GRUB_DISTRIBUTOR\}) (GNU\/)?Linux"/\1"/' \
+        -e "/^\s*echo\s+'\\\$\(echo \"\\\$message\" \| grub_quote\)'\s*\$/d" \
+        /etc/grub.d/10_linux
+fi
+
+# The rest is for installed systems, and not from a snapshot boot: /boot is
+# the real EFI partition even then.
+[ -d /boot/grub ] || exit 0
+grep -q 'mpire\.snapshot=' /proc/cmdline 2>/dev/null && exit 0
+
+# GRUB reads its theme from /boot (the EFI partition on MpireOS), which it can
+# always open, even when the system disk is encrypted.
+mkdir -p /boot/grub/themes
+rm -rf /boot/grub/themes/mpireos.new
+cp -r /usr/share/grub/themes/mpireos /boot/grub/themes/mpireos.new
+rm -rf /boot/grub/themes/mpireos
+mv /boot/grub/themes/mpireos.new /boot/grub/themes/mpireos
+
+if [ -f /etc/default/grub ] && ! grep -q '^GRUB_THEME=' /etc/default/grub; then
+    printf '\n# MpireOS boot menu look (mpire-branding).\nGRUB_THEME="/boot/grub/themes/mpireos/theme.txt"\n' >> /etc/default/grub
+fi
+exit 0
