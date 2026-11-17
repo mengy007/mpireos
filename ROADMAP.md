@@ -8,7 +8,8 @@ MpireOS grows in small, shippable steps. Each milestone ends with something peop
 - [x] Architecture document ([docs/architecture.md](docs/architecture.md))
 - [x] Contributor guide
 - [x] Visual direction and design system ([docs/design-system.md](docs/design-system.md))
-- [ ] Logo, wordmark, and default wallpaper
+- [x] Logo and wordmark ([branding/logo](branding/logo/README.md))
+- [ ] Default wallpaper
 - [ ] Domain registration and a trademark check for "MpireOS"
 - [ ] Code of conduct
 

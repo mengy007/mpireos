@@ -37,7 +37,7 @@ Light is the default theme. Dark is a full theme, not an inversion (see below).
 
 ### Accent
 
-Taken from mpire-tech.com (November 2026): Mpire teal `#269CA1` fading to deep teal `#094551` on primary buttons and the logo mark, ink `#0B1F25` for text.
+Taken from mpire-tech.com (November 2026): Mpire teal `#269CA1` fading to deep teal `#094551` on primary buttons, ink `#0B1F25` for text.
 
 | Token | Value | Use |
 |---|---|---|
@@ -46,6 +46,15 @@ Taken from mpire-tech.com (November 2026): Mpire teal `#269CA1` fading to deep t
 | `accentPressed` | `#1A7F86` | Pressed |
 | `accentSoft` | `#EBF6F7` | Tinted backgrounds for selected and accent-related items |
 | `accentText` | `#094551` | Accent-colored text and links on light surfaces |
+
+### Logo colors
+
+The official logo (see [Logo](#logo)) has its own two colors. They belong to the logo and the wordmark, not to controls.
+
+| Token | Value | Use |
+|---|---|---|
+| `brand` | `#00CBD7` | The mark, and "OS" in the wordmark |
+| `brandNavy` | `#062331` | The logo's dark background, and the dark icon tile |
 
 ### Pastels
 
@@ -137,6 +146,14 @@ Windows open by scaling from 96% with a fade. Respect the system "reduce motion"
 - **UI icons:** thin outline, 1.5 px stroke at 20 px, rounded caps and joins, in `textSecondary`. Lucide-style geometry. Shipped as `mpire-icons`.
 - **App icons:** soft squircles filled with a pastel gradient (top lighter), with a single white or deep-tinted glyph. The Files icon is sky blue, Notes butter, Photos lavender, Music rose, Settings slate, Calendar white with a red month label.
 - **Folders:** filled, slightly rounded folder shapes in the pastel fills, with a lighter tab.
+
+## Logo
+
+The MpireOS logo is a skyline "M": two towers with lit windows, a stepped bar chart falling between them, and small windows below, beside the "MpireOS" wordmark ("Mpire" in white or ink, "OS" in logo cyan). The vector files, their variants, and when to use each are in [branding/logo](../branding/logo/README.md). In the interface:
+
+- The top bar, the login screen and Mpire Setup show the mark beside "Mpire**OS**" (`Mark` in `MpireOS.Style`; "OS" in `brand`).
+- At 24 px and below the mark is the simplified skyline without windows (`mpireos-mark-small.svg`); `Mark` picks it by size.
+- Boot screens (Plymouth, GRUB, the BIOS menu) show the full logo on the light backdrop.
 
 ## Desktop layout
 

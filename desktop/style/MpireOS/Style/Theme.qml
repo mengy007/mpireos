@@ -22,6 +22,8 @@ QtObject {
     readonly property color surfaceSelected: selection
 
     // Accent
+    readonly property color brand: "#00CBD7"           // logo cyan (branding/logo): the mark and "OS"
+    readonly property color brandNavy: "#062331"       // logo navy
     readonly property color accent: "#269CA1"
     readonly property color accentHover: "#2FAAAF"
     readonly property color accentPressed: "#1A7F86"
