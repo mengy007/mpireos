@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
-project(mpire-desktop VERSION 0.3 LANGUAGES CXX)
+project(mpire-desktop VERSION 0.4 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.9 REQUIRED COMPONENTS Gui Qml Quick DBus)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Gui Qml Quick DBus Widgets)
 find_package(LayerShellQt REQUIRED)
 
 include(GNUInstallDirs)
@@ -23,13 +23,21 @@ add_executable(mpire-shell
     src/shellapi.cpp src/shellapi.h
     src/apps.cpp src/apps.h
     src/desktopsettings.cpp src/desktopsettings.h
+    src/filesearch.cpp src/filesearch.h
     src/iconprovider.h
     src/notifications.cpp src/notifications.h
-    src/systemstatus.cpp src/systemstatus.h)
+    src/systemstatus.cpp src/systemstatus.h
+    src/tray.cpp src/tray.h)
 target_compile_definitions(mpire-shell PRIVATE MPIRE_SHELL_QML_DIR="${shell_qml_dir}")
 target_link_libraries(mpire-shell PRIVATE Qt6::Gui Qt6::Qml Qt6::Quick Qt6::DBus LayerShellQt::Interface)
 
 install(TARGETS mpire-shell RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# A stand-in app with a tray icon and menu, for checking the system tray (CI
+# boot test, or by hand). Uses Qt's own tray support, like any Qt or KDE app.
+add_executable(mpire-tray-test tests/tray-test.cpp)
+target_link_libraries(mpire-tray-test PRIVATE Qt6::Widgets)
+install(TARGETS mpire-tray-test RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/mpire-desktop)
 # Shared style module (also used by Mpire Setup and the login screen).
 install(DIRECTORY style/MpireOS DESTINATION ${MPIRE_QML_MODULE_DIR})
 install(DIRECTORY shell/ DESTINATION ${MPIRE_SHELL_QML_INSTALL_DIR})
@@ -44,8 +52,11 @@ install(FILES session/30-mpire-theme.conf DESTINATION ${CMAKE_INSTALL_FULL_SYSCO
 install(FILES kde/MpireOS.colors DESTINATION ${CMAKE_INSTALL_DATADIR}/color-schemes)
 install(FILES kde/kdeglobals kde/kwinrc kde/breezerc kde/ksplashrc kde/kcminputrc
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg)
-# Alt+Space, Alt+F2, and Search open our launcher: this entry shadows KRunner's
-# (KDE's global shortcut service reads both directories).
+# Meta+Space, Alt+Space, Alt+F2, and Search open universal search: KRunner's
+# entry is shadowed by ours, and Meta+Space has an entry of its own (KDE's
+# global shortcut service reads both directories).
 install(FILES session/org.kde.krunner.desktop DESTINATION /usr/local/share/applications)
 install(FILES session/org.kde.krunner.desktop DESTINATION /usr/local/share/kglobalaccel)
+install(FILES session/org.mpireos.search.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES session/org.mpireos.search.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/kglobalaccel)
 install(DIRECTORY kde/lookandfeel/ DESTINATION ${CMAKE_INSTALL_DATADIR}/plasma/look-and-feel/org.mpireos.desktop)

@@ -5,8 +5,11 @@
     python3 desktop/tools/preview.py desktop  [--shot out.png]
     python3 desktop/tools/preview.py greeter  [--shot out.png] [--fake-sddm]
     python3 desktop/tools/preview.py shell-background|shell-topbar|shell-dock [--shot out.png]
-    python3 desktop/tools/preview.py panels --panel launcher|quick-settings|notifications|popups|desktop-menu|wallpaper
+    python3 desktop/tools/preview.py panels --panel search|launcher|quick-settings|notifications|popups|desktop-menu|wallpaper|tray-menu
                                             [--query "text"] [--menu-at 520,300] [--wallpaper mpire:lagoon] [--shot out.png]
+
+The top bar shows sample apps' tray icons (Sync, Chat, Steam-like "Games"),
+and search finds sample files.
 
 --fake-sddm gives the login screen stand-ins for SDDM's sddm, userModel, and
 sessionModel objects, so the code path used under SDDM is exercised.
@@ -249,6 +252,117 @@ class FakeDesktopSettings(QObject):
     def browse(self): print("browse for a picture")
 
 
+TRAY_SAMPLES = [
+    # key, title, color, letter, attention
+    ("org.example.Chat/StatusNotifierItem", "Chat", "#7C66D6", "C", True),
+    ("org.example.Games/StatusNotifierItem", "Games", "#0B3A44", "G", False),
+    ("org.example.Sync/StatusNotifierItem", "Sync", "#5B8DEF", "S", False),
+]
+
+
+class TrayIcons(QQuickImageProvider):
+    """Stands in for TrayIconProvider: the sample apps' icons."""
+
+    def __init__(self):
+        super().__init__(QQuickImageProvider.Pixmap)
+
+    def requestPixmap(self, id, size, requested):
+        n = max(requested.width(), 32) if requested.isValid() else 32
+        key = QUrl.fromPercentEncoding(id.split("/")[1].encode()) if "/" in id else id
+        color, letter = next(((c, l) for k, _, c, l, _ in TRAY_SAMPLES if k == key), ("#B9C2D0", "?"))
+        pm = QPixmap(n, n)
+        pm.fill(Qt.transparent)
+        p = QPainter(pm)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setBrush(QColor(color))
+        p.setPen(Qt.NoPen)
+        p.drawRoundedRect(QRectF(0, 0, n, n), n * 0.3, n * 0.3)
+        f = QFont("Inter")
+        f.setPixelSize(int(n * 0.6))
+        f.setWeight(QFont.Bold)
+        p.setFont(f)
+        p.setPen(QColor("white"))
+        p.drawText(QRectF(0, 0, n, n), Qt.AlignCenter, letter)
+        p.end()
+        return pm
+
+
+class FakeSystemTray(QObject):
+    """Stands in for SystemTray (src/tray.h)."""
+    itemsChanged = Signal()
+    menuChanged = Signal()
+
+    def __init__(self, menu_open=False):
+        super().__init__()
+        self._key = TRAY_SAMPLES[2][0] if menu_open else ""
+
+    @Property("QVariantList", notify=itemsChanged)
+    def items(self):
+        return [dict(key=k, id=t, title=t, tooltip=t, status="NeedsAttention" if a else "Active", category="ApplicationStatus",
+                     attention=a, icon="image://tray/item/%s/1" % QUrl.toPercentEncoding(k).data().decode())
+                for k, t, _, _, a in TRAY_SAMPLES]
+
+    @Property("QVariantList", notify=menuChanged)
+    def menu(self):
+        e = lambda i, label, **kw: dict(id=i, label=label, enabled=kw.get("enabled", True), separator=kw.get("sep", False),
+                                        checkable=kw.get("checkable", False), checked=kw.get("checked", False),
+                                        radio=kw.get("radio", False), icon="", submenu=kw.get("submenu", []))
+        return [e(1, "Sync: all files up to date", enabled=False), e(2, "", sep=True), e(3, "Open Folder"),
+                e(4, "Pause Syncing", checkable=True, checked=True),
+                e(5, "Speed Limit", submenu=[e(6, "No Limit", checkable=True, radio=True, checked=True),
+                                              e(7, "1 MB/s", checkable=True, radio=True)]),
+                e(8, "", sep=True), e(9, "Preferences…"), e(10, "Quit Sync")]
+
+    menuKey = Property(str, lambda self: self._key, notify=menuChanged)
+    menuTitle = Property(str, lambda self: "Sync", notify=menuChanged)
+    menuX = Property(float, lambda self: 1366 - 214.0, notify=menuChanged)
+
+    @Slot(str, float)
+    def activate(self, key, x): print("tray activate:", key)
+
+    @Slot(str, float)
+    def openMenu(self, key, x): print("tray menu:", key)
+
+    @Slot(int)
+    def menuClicked(self, id): print("tray menu clicked:", id)
+
+
+SAMPLE_FILES = [
+    ("Quarterly report.pdf", "~/Documents", "application-pdf", "PDF document", "1.2 MB", False, 1),
+    ("Report drafts", "~/Documents", "folder", "Folder", "", True, 3),
+    ("report-q3-figures.ods", "~/Documents/Work", "x-office-spreadsheet", "ODS spreadsheet", "86.4 KB", False, 9),
+    ("Joshua Tree report.jpg", "~/Pictures", "image-jpeg", "JPEG image", "3.1 MB", False, 30),
+]
+
+
+class FakeFileSearch(QObject):
+    """Stands in for FileSearch (src/filesearch.h)."""
+    revisionChanged = Signal()
+    revision = Property(int, lambda self: 1, notify=revisionChanged)
+    scanning = Property(bool, lambda self: False, notify=revisionChanged)
+
+    @Slot(str, int, result="QVariantList")
+    def search(self, query, limit):
+        q = query.strip().lower()
+        if len(q) < 2:
+            return []
+        now = QDateTime.currentDateTime()
+        out = []
+        for name, folder, icon, kind, size, is_dir, days in SAMPLE_FILES:
+            if q.split()[0] in name.lower():
+                path = folder.replace("~", "/home/meng") + "/" + name
+                out.append(dict(path=path, url=QUrl.fromLocalFile(path).toString(), name=name, folder=folder, isDir=is_dir,
+                                icon=icon, kind=kind, size=size, modified=now.addDays(-days), image=False,
+                                rank=(96 if name.lower().startswith(q) else 74) - days * 0.1))
+        return out[:limit]
+
+    @Slot()
+    def refresh(self): pass
+
+    @Slot(str)
+    def reveal(self, path): print("reveal:", path)
+
+
 class FakeShellApi(QObject):
     """Stands in for mpire-shell's ShellApi (src/shellapi.h)."""
     panelChanged = Signal()
@@ -333,8 +447,8 @@ def main() -> int:
     parser.add_argument("--size", default="1366x936")
     parser.add_argument("--time", help="fixed time for screenshots, e.g. 2026-11-12T10:53")
     parser.add_argument("--fake-sddm", action="store_true", help="greeter: provide stand-in SDDM objects")
-    parser.add_argument("--panel", default="", help="panels: launcher, quick-settings, notifications, or popups")
-    parser.add_argument("--query", default="", help="panels: text typed into the launcher")
+    parser.add_argument("--panel", default="", help="panels: search, launcher, quick-settings, notifications, popups, desktop-menu, wallpaper, or tray-menu")
+    parser.add_argument("--query", default="", help="panels: text typed into search or the launcher")
     parser.add_argument("--menu-at", default="-1,-1", help="panels: where the desktop menu opens, x,y")
     parser.add_argument("--wallpaper", default="mpire:mist", help="the desktop's wallpaper, e.g. mpire:lagoon")
     parser.add_argument("--pictures", type=Path, nargs="*", default=[], help="wallpaper picker: sample pictures")
@@ -352,13 +466,17 @@ def main() -> int:
     now = QDateTime.fromString(args.time, "yyyy-MM-ddTHH:mm") if args.time else QDateTime.currentDateTime()
     menu_at = tuple(float(v) for v in args.menu_at.split(","))
     keep = [FakeShellApi("" if args.panel == "popups" else args.panel, menu_at), FakeAppIndex(), FakeNotifications(now),
-            FakeSystemStatus(), FakeDesktopSettings(args.wallpaper, args.pictures)]
+            FakeSystemStatus(), FakeDesktopSettings(args.wallpaper, args.pictures),
+            FakeSystemTray(args.panel == "tray-menu"), FakeFileSearch()]
     ctx.setContextProperty("shellApi", keep[0])
     ctx.setContextProperty("appIndex", keep[1])
     ctx.setContextProperty("notifications", keep[2])
     ctx.setContextProperty("systemStatus", keep[3])
     ctx.setContextProperty("desktopSettings", keep[4])
+    ctx.setContextProperty("systemTray", keep[5])
+    ctx.setContextProperty("fileSearch", keep[6])
     view.engine().addImageProvider("icon", LetterIcons())
+    view.engine().addImageProvider("tray", TrayIcons())
     if args.fake_sddm:
         sddm, users, sessions = FakeSddm(), FakeUsers(), FakeSessions()
         keep += [sddm, users, sessions]
@@ -376,9 +494,9 @@ def main() -> int:
     if args.panel:
         keep[0].panelChanged.emit()          # as when mpire-shell opens a panel
     if args.query:
-        launcher = view.rootObject().findChild(QObject, "launcher")
-        if launcher is not None:
-            launcher.setProperty("query", args.query)
+        target = view.rootObject().findChild(QObject, "search" if args.panel == "search" else "launcher")
+        if target is not None:
+            target.setProperty("query", args.query)
     if args.shot:
         def shoot():
             view.grabWindow().save(str(args.shot))

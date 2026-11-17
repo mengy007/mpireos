@@ -21,6 +21,8 @@ Item {
         anchors { left: parent.left; right: parent.right; top: parent.top }
         now: desktop.now
         battery: 98; showNotifications: true
+        trayItems: typeof systemTray !== "undefined" ? systemTray.items : []
+        openTrayKey: typeof systemTray !== "undefined" && typeof shellApi !== "undefined" && shellApi.panel === "tray-menu" ? systemTray.menuKey : ""
     }
 
     Dock {

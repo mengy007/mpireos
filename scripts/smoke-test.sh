@@ -58,9 +58,39 @@ for ((t = 0; t < timeout; t += 5)); do
         wait_for MPIREOS_CENTER_SHOWN && { sleep 2; qemu_screenshot "$monitor" "${shot%.ppm}-center.ppm"; }
         if wait_for MPIREOS_PANELS_DONE; then
             sleep 3
+            # The system tray: the test apps' icons sit left of MpireOS's own.
+            tray="${shot%.ppm}-tray.ppm"
+            qemu_screenshot "$monitor" "$tray"
+            # Right-click the Sync app's icon (found by its color) for its menu,
+            # then open the Speed Limit submenu.
+            if xy="$(qemu_find_color "$tray" 5B8DEF 30)"; then
+                qemu_click "$qmp" ${xy% *} ${xy#* } right "$tray"
+                sleep 3
+                qemu_screenshot "$monitor" "${shot%.ppm}-tray-menu.ppm"
+                for k in down down down ret; do qemu_key "$monitor" "$k"; sleep 0.4; done
+                sleep 2
+                qemu_screenshot "$monitor" "${shot%.ppm}-tray-submenu.ppm"
+                qemu_key "$monitor" esc
+            else
+                echo "note: the Sync tray icon is not in the top bar"
+            fi
+            sleep 2
+            # Universal search with Meta+Space: a file, then a conversion.
+            qemu_key "$monitor" meta_l-spc
+            sleep 3
+            qemu_screenshot "$monitor" "${shot%.ppm}-universal.ppm"
+            for k in r e p o r t; do qemu_key "$monitor" "$k"; sleep 0.3; done
+            sleep 3
+            qemu_screenshot "$monitor" "${shot%.ppm}-universal-files.ppm"
+            for _ in r e p o r t; do qemu_key "$monitor" backspace; sleep 0.2; done
+            for k in 1 0 spc k m spc i n spc m i l e s; do qemu_key "$monitor" "$k"; sleep 0.3; done
+            sleep 2
+            qemu_screenshot "$monitor" "${shot%.ppm}-universal-convert.ppm"
+            qemu_key "$monitor" esc
+            sleep 2
+            # Alt+Space (KRunner's shortcut) opens universal search too.
             qemu_key "$monitor" alt-spc
             sleep 3
-            qemu_screenshot "$monitor" "${shot%.ppm}-launcher.ppm"
             for k in s e t t; do qemu_key "$monitor" "$k"; sleep 0.3; done
             sleep 2
             qemu_screenshot "$monitor" "${shot%.ppm}-search.ppm"
@@ -103,7 +133,7 @@ for ((t = 0; t < timeout; t += 5)); do
         qemu_click "$qmp" 900 200 left "$ref"
         sleep 4
         qemu_screenshot "$monitor" "${shot%.ppm}-dock-pinned.ppm"
-        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT "$log" || true
+        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT -e MPIREOS_TRAY "$log" || true
         exit 0
     fi
     if grep -q -e MPIREOS_DESKTOP_FAIL -e MPIREOS_SETUP_FAIL "$log"; then

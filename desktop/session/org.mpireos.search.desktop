@@ -1,0 +1,12 @@
+# MpireOS: Meta+Space opens universal search (as Cmd+Space does on a Mac).
+# Its own entry, rather than one more shortcut on KRunner's, so systems that
+# already saved KRunner's shortcuts get it too. Tapping Meta on its own still
+# opens the launcher (kwinrc [ModifierOnlyShortcuts]).
+[Desktop Entry]
+Type=Application
+Name=Universal Search
+Comment=Search apps, files, settings, and more
+Exec=mpire-shell --toggle search
+Icon=search
+NoDisplay=true
+X-KDE-Shortcuts=Meta+Space
