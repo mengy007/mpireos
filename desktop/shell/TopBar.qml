@@ -4,8 +4,8 @@ import MpireOS.Style
 
 // The frosted top bar: mark and app menus, workspace pill, the system tray,
 // and clock. The tray on the right holds other apps' status icons (from
-// systemTray, src/tray.h), newest leftmost, then MpireOS's own: search,
-// notifications, network, quick settings, battery.
+// systemTray, src/tray.h), newest leftmost, then MpireOS's own: the AI
+// assistant, search, notifications, network, quick settings, battery.
 // Parts with nothing real to show stay hidden: no app name or menus until the
 // shell tracks the active window, no battery on desktops.
 Rectangle {
@@ -24,6 +24,8 @@ Rectangle {
     property string openTrayKey: ""         // whose menu is open (its icon stays highlighted)
 
     signal searchClicked()
+    signal assistantClicked()
+    property bool assistantOpen: false
     // x: the icon's center, in screen coordinates (the bar spans the screen).
     signal trayActivated(string key, real x)
     signal trayMenuRequested(string key, real x)
@@ -170,6 +172,7 @@ Rectangle {
             }
         }
 
+        TrayIcon { name: "sparkles"; objectName: "assistantIcon"; color: bar.assistantOpen ? Theme.accent : Theme.text; onClicked: bar.assistantClicked() }
         TrayIcon { name: "search"; onClicked: bar.searchClicked() }
         TrayIcon {
             name: "bell"

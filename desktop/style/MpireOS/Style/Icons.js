@@ -42,7 +42,18 @@ var paths = {
     plus: "<path d='M12 5.5v13M5.5 12h13'/>",
     check: "<path d='M5.5 12.5l4 4 9-9'/>",
     palette: "<path d='M12 3.5a8.5 8.5 0 0 0 0 17c1.3 0 2-.8 2-1.8 0-1.3-1.1-1.6-1.1-2.7 0-1 .8-1.6 1.8-1.6h2.2a3.6 3.6 0 0 0 3.6-3.6C20.5 6.9 16.7 3.5 12 3.5z'/><circle cx='7.8' cy='11' r='1.1'/><circle cx='10.5' cy='7.4' r='1.1'/><circle cx='15' cy='7.6' r='1.1'/>",
-    ethernet: "<rect x='4' y='5' width='16' height='11' rx='2'/><path d='M8 16v3h8v-3M8 9v2.5M11 9v2.5M14 9v2.5'/>"
+    ethernet: "<rect x='4' y='5' width='16' height='11' rx='2'/><path d='M8 16v3h8v-3M8 9v2.5M11 9v2.5M14 9v2.5'/>",
+    // AI: the assistant, its settings, and where a model runs.
+    sparkles: "fill:<path d='M10 3c.6 4.6 2.6 6.8 7 7.4-4.4.6-6.4 2.8-7 7.4-.6-4.6-2.6-6.8-7-7.4 4.4-.6 6.4-2.8 7-7.4z'/><path d='M18.5 13.5c.3 2.2 1.2 3.2 3.2 3.5-2 .3-2.9 1.3-3.2 3.5-.3-2.2-1.2-3.2-3.2-3.5 2-.3 2.9-1.3 3.2-3.5z'/>",
+    arrowUp: "<path d='M12 19V5M6 11l6-6 6 6'/>",
+    stop: "fill:<rect x='7' y='7' width='10' height='10' rx='2'/>",
+    copy: "<rect x='8.5' y='8.5' width='11' height='11' rx='2.5'/><path d='M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2'/>",
+    cloud: "<path d='M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.5 1.6A3.8 3.8 0 0 1 17.5 18.5z'/>",
+    network: "<rect x='9' y='3.5' width='6' height='5' rx='1.5'/><rect x='3' y='15.5' width='6' height='5' rx='1.5'/><rect x='15' y='15.5' width='6' height='5' rx='1.5'/><path d='M12 8.5v3.5M6 15.5V12h12v3.5'/>",
+    key: "<circle cx='8' cy='15' r='4'/><path d='M11 12l8.5-8.5M16.5 6.5l2.5 2.5M14 9l2 2'/>",
+    trash: "<path d='M4.5 7h15M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M6.5 7l.8 11.2a2 2 0 0 0 2 1.8h5.4a2 2 0 0 0 2-1.8L17.5 7'/>",
+    shield: "<path d='M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z'/><path d='M9 12l2.2 2.2L15.5 10'/>",
+    chat: "<path d='M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17.5H5A1.5 1.5 0 0 1 3.5 16V7A1.5 1.5 0 0 1 5 5.5z'/>"
 };
 
 function url(name, color, weight) {

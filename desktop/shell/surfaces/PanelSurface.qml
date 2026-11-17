@@ -4,16 +4,21 @@ import "../panels"
 
 // Full-screen overlay (layer-shell overlay layer) that mpire-shell shows only
 // while a panel is open: universal search, the launcher, quick settings, the
-// notification list, the desktop's right-click menu, the wallpaper picker, or
-// a tray icon's menu. Clicking outside the panel or pressing Esc closes it.
+// notification list, the desktop's right-click menu, the wallpaper picker, a
+// tray icon's menu, the AI assistant, or AI settings. Clicking outside the
+// panel or pressing Esc closes it.
 // Context properties: shellApi, appIndex, notifications, systemStatus,
-// desktopSettings, fileSearch, systemTray.
+// desktopSettings, fileSearch, systemTray, ai.
 Item {
     id: surface
     readonly property string panel: shellApi.panel
     property date now: new Date()
 
     function close() { shellApi.panel = "" }
+    // The AI (context property `ai`, src/ai.h); null where it isn't provided.
+    readonly property var aiService: typeof ai !== "undefined" ? ai : null
+    property string aiTab: ""                 // which part of AI settings to open
+    function openAiSettings(tab) { aiTab = tab; shellApi.panel = "ai-settings" }
 
     focus: true
     Keys.onEscapePressed: close()
@@ -23,13 +28,15 @@ Item {
         function onPanelChanged() {
             surface.now = new Date()
             if (shellApi.panel === "launcher") launcher.reset()
-            else if (shellApi.panel === "search") search.reset()
+            else if (shellApi.panel === "search") { search.reset(); if (surface.aiService) surface.aiService.refresh() }
             else surface.forceActiveFocus()          // so Esc closes this panel too
             if (shellApi.panel === "notifications") notifications.markRead()
             if (shellApi.panel === "quick-settings") { quick.confirm = ""; systemStatus.refresh() }
             if (shellApi.panel === "desktop-menu") { desktopMenu.reset(); desktopMenu.forceActiveFocus() }
             if (shellApi.panel === "wallpaper") { desktopSettings.refreshPictures(); picker.forceActiveFocus() }
             if (shellApi.panel === "tray-menu") { trayMenu.reset(); trayMenu.forceActiveFocus() }
+            if (shellApi.panel === "assistant") assistant.reset()
+            if (shellApi.panel === "ai-settings") { aiSettings.reset(surface.aiTab); surface.aiTab = ""; aiSettings.forceActiveFocus() }
         }
     }
 
@@ -38,7 +45,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Theme.text
-        opacity: surface.panel === "launcher" ? 0.16 : surface.panel === "search" ? 0.06 : 0
+        opacity: surface.panel === "launcher" ? 0.16 : surface.panel === "search" || surface.panel === "ai-settings" ? 0.06 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.animNormal } }
     }
     MouseArea {
@@ -62,6 +69,12 @@ Item {
         height: implicitHeight
         apps: appIndex.apps
         files: fileSearch
+        ai: surface.aiService
+        onAskAi: question => {
+            if (!surface.aiService.ready) { surface.openAiSettings(""); return }
+            surface.aiService.ask(question)
+            shellApi.panel = "assistant"
+        }
         onOpenApp: id => appIndex.launch(id)
         onRunCommand: command => shellApi.launch(command)
         onRunAction: action => systemStatus[action]()
@@ -178,5 +191,43 @@ Item {
         settings: desktopSettings
         onDone: surface.close()
         MouseArea { anchors.fill: parent; z: -1 }
+    }
+
+    // The AI assistant: a tall card on the right, under the top bar.
+    Assistant {
+        id: assistant
+        objectName: "assistant"
+        visible: surface.panel === "assistant"
+        ai: surface.aiService
+        width: 440
+        anchors { right: parent.right; rightMargin: 12; top: parent.top; topMargin: Theme.topBarHeight + 8 }
+        height: Math.min(surface.height - Theme.topBarHeight - 20, 820)
+        onOpenSettings: tab => surface.openAiSettings(tab)
+        onClose: surface.close()
+        MouseArea { anchors.fill: parent; z: -1 }
+        transformOrigin: Item.TopRight
+        opacity: visible ? 1 : 0
+        scale: visible ? 1 : 0.97
+        Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+        Behavior on scale { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+    }
+
+    AiSettings {
+        id: aiSettings
+        objectName: "aiSettings"
+        visible: surface.panel === "ai-settings"
+        ai: surface.aiService
+        width: 680
+        anchors.horizontalCenter: parent.horizontalCenter
+        maxHeight: surface.height - Theme.topBarHeight - 56
+        height: implicitHeight
+        y: Math.max(Theme.topBarHeight + 24, Math.round((surface.height - height) / 2))
+        onDone: surface.close()
+        Keys.onEscapePressed: surface.close()
+        MouseArea { anchors.fill: parent; z: -1 }
+        opacity: visible ? 1 : 0
+        scale: visible ? 1 : 0.97
+        Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+        Behavior on scale { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
     }
 }

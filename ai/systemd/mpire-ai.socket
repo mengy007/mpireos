@@ -1,0 +1,10 @@
+[Unit]
+Description=MpireOS AI gateway socket (OpenAI-compatible, for apps)
+Documentation=https://github.com/mengy007/mpireos/blob/main/docs/ai.md
+
+[Socket]
+ListenStream=%t/mpire-ai.sock
+SocketMode=0600
+
+[Install]
+WantedBy=sockets.target

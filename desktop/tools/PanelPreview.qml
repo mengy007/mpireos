@@ -15,6 +15,7 @@ Item {
         now: root.now
     }
     PanelSurface {
+        objectName: "panelSurface"
         anchors.fill: parent
         visible: shellApi.panel !== ""
         now: root.now

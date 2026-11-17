@@ -16,7 +16,8 @@ var settingsPages = [
     { title: "Keyboard", keywords: "keyboard layout language typing", command: "kcmshell6 kcm_keyboard", glyph: "keyboard" },
     { title: "Users", keywords: "users account password avatar", command: "kcmshell6 kcm_users", glyph: "user" },
     { title: "Date & Time", keywords: "date time clock timezone", command: "kcmshell6 kcm_clock", glyph: "calendar" },
-    { title: "Power", keywords: "power battery energy sleep", command: "kcmshell6 kcm_powerdevilprofilesconfig", glyph: "battery" }
+    { title: "Power", keywords: "power battery energy sleep", command: "kcmshell6 kcm_powerdevilprofilesconfig", glyph: "battery" },
+    { title: "AI", keywords: "ai assistant artificial intelligence llm chatgpt claude openai anthropic gemini ollama model api key", command: "mpire-shell --show ai-settings", glyph: "sparkles" }
 ];
 
 var systemActions = [
@@ -238,10 +239,29 @@ function percentOf(text) {
     return isFinite(r) ? round(r) : null;
 }
 
+// Does this read like something to ask the AI rather than look up? A
+// question, or a request ("write...", "explain...") of a few words.
+var askWords = ["what", "whats", "what's", "why", "how", "who", "when", "where", "which", "can", "could", "should",
+                "would", "is", "are", "do", "does", "did", "explain", "write", "summarize", "summarise", "translate",
+                "help", "tell", "define", "compare", "draft", "fix", "give", "suggest", "plan", "ask"];
+function isQuestion(query) {
+    var q = query.trim().toLowerCase();
+    if (/^(ai|ask)\s*[:,]/.test(q) || q.charAt(0) === "?") return true;
+    if (/\?$/.test(q) && q.length > 3) return true;
+    var words = q.split(/\s+/);
+    return words.length >= 3 && askWords.indexOf(words[0].replace(/[^a-z']/g, "")) >= 0;
+}
+
+// The question itself, without an "ai:" or "?" prefix.
+function question(query) {
+    return query.trim().replace(/^(ai|ask)\s*[:,]\s*/i, "").replace(/^\?\s*/, "");
+}
+
 // ---- Universal search (Meta+Space): everything at once, in sections. ----
-// files: FileSearch results (src/filesearch.h). Returns rows; rows with
+// files: FileSearch results (src/filesearch.h). ai: {ready, name} for the
+// "Ask AI" row (src/ai.h), or null to leave it out. Returns rows; rows with
 // kind "header" title a section and can't be picked.
-function universal(query, apps, files) {
+function universal(query, apps, files, ai) {
     var q = query.trim().toLowerCase();
     if (q.length === 0) return [];
     var rows = [];
@@ -271,6 +291,15 @@ function universal(query, apps, files) {
                  modified: f.modified, image: f.image, rank: f.rank - 6 };
     });
 
+    var askRow = null;
+    if (ai) {
+        var asked = question(query);
+        askRow = { kind: "ai", title: asked, question: asked, glyph: "sparkles", icon: "", hint: "Ask",
+                   subtitle: ai.ready ? "Ask " + (ai.name || "AI") : "Set up AI to ask questions" };
+        // A question goes to the AI first (unless there's already an answer).
+        if (!top && isQuestion(query)) top = askRow;
+    }
+
     if (!top) {
         // Otherwise the single best match of any kind, if it's a good one.
         var candidates = [appRows[0], fileRows[0], settingRows[0], actionRows[0]].filter(function (r) { return r && r.rank >= 70; });
@@ -291,6 +320,10 @@ function universal(query, apps, files) {
     section("Files & Folders", fileRows, 5);
     section("Settings", settingRows, 3);
     section("Actions", actionRows, 3);
+    if (askRow && askRow !== top) {
+        rows.push({ kind: "header", title: "AI" });
+        rows.push(askRow);
+    }
     rows.push({ kind: "header", title: "Web" });
     rows.push({ kind: "web", title: "Search the web for “" + query.trim() + "”", subtitle: "DuckDuckGo",
                 icon: "", glyph: "globe", hint: "Search",

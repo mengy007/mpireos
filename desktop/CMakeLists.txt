@@ -20,6 +20,7 @@ endif()
 
 add_executable(mpire-shell
     src/main.cpp
+    src/ai.cpp src/ai.h
     src/shellapi.cpp src/shellapi.h
     src/apps.cpp src/apps.h
     src/desktopsettings.cpp src/desktopsettings.h
@@ -59,4 +60,7 @@ install(FILES session/org.kde.krunner.desktop DESTINATION /usr/local/share/appli
 install(FILES session/org.kde.krunner.desktop DESTINATION /usr/local/share/kglobalaccel)
 install(FILES session/org.mpireos.search.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 install(FILES session/org.mpireos.search.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/kglobalaccel)
+# Meta+A opens the AI assistant.
+install(FILES session/org.mpireos.assistant.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES session/org.mpireos.assistant.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/kglobalaccel)
 install(DIRECTORY kde/lookandfeel/ DESTINATION ${CMAKE_INSTALL_DATADIR}/plasma/look-and-feel/org.mpireos.desktop)

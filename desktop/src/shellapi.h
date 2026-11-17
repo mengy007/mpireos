@@ -14,7 +14,8 @@ class ShellApi : public QObject
     Q_CLASSINFO("D-Bus Interface", "org.mpireos.Shell")
     // The open panel: "" (none), "launcher", "search" (universal search),
     // "quick-settings", "notifications", "desktop-menu" (right-click on the
-    // desktop), "wallpaper" (the picker), or "tray-menu" (a tray icon's menu).
+    // desktop), "wallpaper" (the picker), "tray-menu" (a tray icon's menu),
+    // "assistant" (the AI assistant), or "ai-settings".
     Q_PROPERTY(QString panel READ panel WRITE setPanel NOTIFY panelChanged)
     // Where the desktop menu opens (screen coordinates of the right-click).
     Q_PROPERTY(QPointF menuPosition READ menuPosition NOTIFY panelChanged)
@@ -43,6 +44,7 @@ public slots:
     Q_SCRIPTABLE void HidePanel();
     Q_SCRIPTABLE void ToggleLauncher();     // for KWin's Meta key (kwinrc [ModifierOnlyShortcuts])
     Q_SCRIPTABLE void ToggleSearch();       // Meta+Space, Alt+Space
+    Q_SCRIPTABLE void ToggleAssistant();    // Meta+A
 
 signals:
     void panelChanged();
