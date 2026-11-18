@@ -1,4 +1,5 @@
-# No Plasma splash screen: the MpireOS desktop appears directly after login.
+# The splash between the login screen and the desktop: MpireOS's own, from the
+# org.mpireos.desktop look-and-feel package (kde/lookandfeel/contents/splash).
 [KSplash]
-Engine=none
-Theme=None
+Engine=KSplashQML
+Theme=org.mpireos.desktop

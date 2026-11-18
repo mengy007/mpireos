@@ -27,6 +27,9 @@ LayoutName=org.kde.breeze.desktop
 library=org.mpireos.decoration
 theme=
 
-[KSplash]
-Engine=none
-Theme=None
+# The splash after login: ours (contents/splash), not Breeze's. Plasma reads
+# this group as [ksplashrc][KSplash]; without it, it names this package anyway,
+# and a package with no splash of its own falls back to Breeze's.
+[ksplashrc][KSplash]
+Engine=KSplashQML
+Theme=org.mpireos.desktop
