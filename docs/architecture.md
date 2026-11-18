@@ -130,7 +130,7 @@ Both `linux` (from the channel's snapshot) and `linux-lts` are installed by defa
 
 ## Desktop: Mpire Desktop
 
-MpireOS ships its own desktop environment, **Mpire Desktop**. Everything a user sees and touches is MpireOS's own: the login screen, lock screen, panel, dock, launcher, notifications, quick settings, settings app, and over time the core apps. It is written in **C++ and Qt 6 / QML** and shares one design system (color, type, spacing, motion, icons) with Mpire Setup, so the whole system looks like one product. The design system is defined in [design-system.md](design-system.md): light and airy, pale teal-gray backdrop, white rounded cards with soft shadows, one teal accent (from mpire-tech.com), pastel colors to tell things apart, a frosted top bar, a floating dock, and a clean desktop with everything one right-click away.
+MpireOS ships its own desktop environment, **Mpire Desktop**. Everything a user sees and touches is MpireOS's own: the login screen, lock screen, panel, dock, launcher, notifications, quick settings, settings app, and over time the core apps. It is written in **C++ and Qt 6 / QML** and shares one design system (color, type, spacing, motion, icons) with Mpire Setup, so the whole system looks like one product. The design system is defined in [design-system.md](design-system.md): light and airy, pale teal-gray backdrop, white rounded cards with soft shadows, one cyan accent (from the logo), pastel colors to tell things apart, a frosted top bar, a floating dock, and a clean desktop with everything one right-click away.
 
 ### What we build and what we reuse
 

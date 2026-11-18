@@ -50,7 +50,7 @@ SAMPLE_APPS = [
     ("vlc.desktop", "VLC media player", "Media Player", "vlc"),
     ("org.kde.kwrite.desktop", "KWrite", "Text Editor", "kwrite"),
 ]
-ICON_COLORS = ["#83A9D8", "#8CCBBB", "#F2CF77", "#0B3A44", "#B6A1E4", "#B9C2D0", "#269CA1", "#E6B072", "#EEAEBF"]
+ICON_COLORS = ["#83A9D8", "#8CCBBB", "#F2CF77", "#0B3A44", "#B6A1E4", "#B9C2D0", "#00B4C1", "#E6B072", "#EEAEBF"]
 
 
 class LetterIcons(QQuickImageProvider):

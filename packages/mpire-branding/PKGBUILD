@@ -3,9 +3,9 @@
 # screen) and the GRUB boot menu theme. Artwork is drawn by
 # branding/make-boot-art.py; the ISO's boot menus use the same files.
 pkgname=mpire-branding
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
-pkgdesc="MpireOS boot splash and boot menu theme"
+pkgdesc="MpireOS logo, boot splash and boot menu theme"
 arch=('any')
 url="https://github.com/mengy007/mpireos"
 license=('GPL-3.0-or-later')
@@ -27,5 +27,9 @@ package() {
         size="$(basename "$(dirname "$(dirname "$icon")")")"
         install -Dm644 "$icon" "$pkgdir/usr/share/icons/hicolor/$size/apps/mpireos.png"
     done
+    install -Dm644 "$startdir/icons/scalable/apps/mpireos.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/mpireos.svg"
     install -Dm644 "$startdir/icons/256x256/apps/mpireos.png" "$pkgdir/usr/share/pixmaps/mpireos.png"
+    # The full logo, for apps and pages that show the wordmark.
+    install -d "$pkgdir/usr/share/mpireos/logo"
+    install -m644 "$startdir"/logo/*.svg "$pkgdir/usr/share/mpireos/logo/"
 }

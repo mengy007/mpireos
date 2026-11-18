@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="branding/logo/mpireos-logo.svg">
+    <img src="branding/logo/mpireos-logo-light.svg" alt="MpireOS" width="420">
+  </picture>
+</p>
+
 # MpireOS
 
 MpireOS is a US-based, open source Linux distribution focused on a polished, cohesive desktop. It is built on Arch Linux, then held back and tested so that updates arrive calm and reversible.

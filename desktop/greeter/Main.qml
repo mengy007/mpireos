@@ -167,7 +167,7 @@ Item {
     RowLayout {
         anchors { left: parent.left; bottom: parent.bottom; leftMargin: 32; bottomMargin: 28 }
         spacing: 10
-        Mark { size: 14 }
+        Mark { size: 16 }
         Overline { text: "MpireOS" }
         Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 12; color: Theme.border }
         Label { role: "small"; secondary: true; text: qsTr("Thoughtfully yours."); font.pixelSize: 11 }

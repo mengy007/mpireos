@@ -2,17 +2,20 @@
 """Draws MpireOS's boot artwork from the design system (docs/design-system.md).
 
 Writes:
-  packages/mpire-branding/icons/<size>/apps/mpireos.png  the OS logo icon
+  packages/mpire-branding/icons/<size>/apps/mpireos.png  the OS logo icon (+ scalable SVG)
   packages/mpire-branding/plymouth/mpireos/*.png   boot splash, spinner, password field
   packages/mpire-branding/grub/mpireos/*.png       GRUB theme background, logo, menu pieces
   packages/mpire-branding/grub/mpireos/*.pf2       GRUB fonts (Inter), if grub-mkfont exists
   iso/syslinux/splash.png                          BIOS boot menu background (640x480)
 
 The outputs are committed, so building the ISO or packages never needs this script.
-Run it again after changing the palette or the mark:
+The logo itself comes from branding/logo/*.svg (branding/make-logo.py).
+Run it again after changing the palette or the logo:
     python3 branding/make-boot-art.py
-Needs Pillow and the Inter font (apt: fonts-inter, pacman: inter-font).
+Needs Pillow, CairoSVG (pip install cairosvg) and the Inter font
+(apt: fonts-inter, pacman: inter-font).
 """
+import io
 import math
 import shutil
 import subprocess
@@ -26,12 +29,14 @@ PLY = REPO / "packages/mpire-branding/plymouth/mpireos"
 GRUB = REPO / "packages/mpire-branding/grub/mpireos"
 SYSLINUX = REPO / "iso/syslinux"
 ICONS = REPO / "packages/mpire-branding/icons"
+LOGO = REPO / "branding/logo"
 
-# Palette (desktop/style/MpireOS/Style/Theme.qml, from mpire-tech.com).
+# Palette (desktop/style/MpireOS/Style/Theme.qml; accent follows the logo cyan).
 BACKDROP = "#E4EDEF"
 BACKDROP_HI = "#F4F8F9"
-ACCENT = "#269CA1"
-ACCENT_DEEP = "#094551"
+ACCENT = "#00B4C1"
+ACCENT_STRONG = "#0096A3"   # selected boot entries: white text needs the deeper cyan
+ACCENT_DEEP = "#054F5C"
 INK = "#0B1F25"
 TEXT2 = "#4F5D6B"
 TEXT3 = "#8B95A3"
@@ -73,29 +78,11 @@ def save(img, path):
 
 # ---------------------------------------------------------------- shapes
 
-def mark(size, ss=4):
-    """The MpireOS mark: a teal squircle (vertical gradient) with a white peak."""
-    s = size * ss
-    grad = Image.new("RGBA", (s, s))
-    d = ImageDraw.Draw(grad)
-    for y in range(s):
-        d.line([(0, y), (s, y)], fill=mix(ACCENT, ACCENT_DEEP, y / (s - 1)))
-    mask = Image.new("L", (s, s), 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, s - 1, s - 1], radius=s * 0.3, fill=255)
-    out = Image.new("RGBA", (s, s), (0, 0, 0, 0))
-    out.paste(grad, (0, 0), mask)
-    # Icons.js "logo": M6.5 16.5V8.5l5.5 4.5 5.5-4.5v8 in a 24-unit box, drawn at 82%.
-    icon = s * 0.82
-    off = (s - icon) / 2
-    u = icon / 24
-    pts = [(6.5, 16.5), (6.5, 8.5), (12, 13), (17.5, 8.5), (17.5, 16.5)]
-    pts = [(off + x * u, off + y * u) for x, y in pts]
-    w = 2.4 * u
-    d = ImageDraw.Draw(out)
-    d.line(pts, fill="white", width=round(w), joint="curve")
-    for x, y in (pts[0], pts[-1]):
-        d.ellipse([x - w / 2, y - w / 2, x + w / 2, y + w / 2], fill="white")
-    return out.resize((size, size), Image.LANCZOS)
+def render_svg(name, width=None, height=None):
+    """Rasterizes one of the logo SVGs in branding/logo (drawn by make-logo.py)."""
+    import cairosvg
+    png = cairosvg.svg2png(url=str(LOGO / name), output_width=width, output_height=height)
+    return Image.open(io.BytesIO(png)).convert("RGBA")
 
 
 def soft_shadow(size, radius, blur, alpha, ss=1):
@@ -136,19 +123,9 @@ def text_size(fnt, text):
     return r - l, b - t, l, t
 
 
-def lockup(mark_size, word_size, gap, color=INK):
-    """Mark above the "MpireOS" wordmark, centered."""
-    m = mark(mark_size)
-    fnt = font("SemiBold", word_size)
-    tw, th, tl, tt = text_size(fnt, "MpireOS")
-    shadow, pad = soft_shadow((mark_size, mark_size), mark_size * 0.3, max(2, mark_size // 10), 40)
-    w = max(tw, mark_size + pad * 2)
-    h = pad + mark_size + gap + th + 4
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    img.alpha_composite(shadow, ((w - shadow.width) // 2, mark_size // 12))
-    img.alpha_composite(m, ((w - mark_size) // 2, pad))
-    ImageDraw.Draw(img).text(((w - tw) // 2 - tl, pad + mark_size + gap - tt), "MpireOS", font=fnt, fill=color)
-    return img
+def lockup(height):
+    """The official logo, mark beside the wordmark, for light backgrounds."""
+    return render_svg("mpireos-logo-light.svg", height=height)
 
 
 def spinner_frame(size, angle, stroke, ss=4):
@@ -207,15 +184,21 @@ def nine_slice(img, prefix, outdir, corner):
 # ---------------------------------------------------------------- outputs
 
 def icons():
-    """The mark as the OS logo (os-release LOGO=mpireos), for About pages."""
+    """The OS logo icon (os-release LOGO=mpireos), for About pages. 24 px and
+    below use the simplified icon, where windows and the badge would blur."""
     for size in (16, 24, 32, 48, 64, 128, 256):
-        save(mark(size), ICONS / f"{size}x{size}/apps/mpireos.png")
+        name = "mpireos-icon-small.svg" if size <= 24 else "mpireos-icon.svg"
+        save(render_svg(name, size, size), ICONS / f"{size}x{size}/apps/mpireos.png")
+    dest = ICONS / "scalable/apps/mpireos.svg"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(LOGO / "mpireos-icon.svg", dest)
+    print("wrote", dest.relative_to(REPO))
 
 
 def plymouth():
     save(backdrop(1920, 1080).convert("RGB"), PLY / "background.png")
-    save(lockup(96, 34, 22), PLY / "logo.png")
-    save(lockup(192, 68, 44), PLY / "logo@2x.png")
+    save(lockup(72), PLY / "logo.png")
+    save(lockup(144), PLY / "logo@2x.png")
     for i in range(36):
         save(spinner_frame(36, i * 10 - 90, 3.5), PLY / f"spinner-{i:02d}.png")
         save(spinner_frame(72, i * 10 - 90, 7), PLY / f"spinner-{i:02d}@2x.png")
@@ -234,13 +217,13 @@ def plymouth():
 
 def grub():
     save(backdrop(1920, 1080).convert("RGB"), GRUB / "background.png")
-    save(lockup(60, 22, 12), GRUB / "logo.png")
+    save(lockup(50), GRUB / "logo.png")
     # Menu card: white, rounded 20px, hairline border. Corner pieces carry the radius.
     card = rounded((120, 120), 16, rgb("#FFFFFF", 235), rgb(BORDER), 1)
     nine_slice(card, "menu_", GRUB, 18)
     # Selected entry: a teal pill (accent -> slightly deeper).
     # Its corner pieces are drawn around the entry's own box, so keep them small.
-    sel = rounded((40, 24), 7, rgb(ACCENT))
+    sel = rounded((40, 24), 7, rgb(ACCENT_STRONG))
     nine_slice(sel, "select_", GRUB, 6)
     # Scrollbar thumb and track.
     # Terminal box (for the GRUB command line and "Loading" messages).
@@ -264,8 +247,8 @@ def syslinux():
     drawn by syslinux on top, in the card area (see iso/syslinux/mpireos_head.cfg)."""
     w, h = 640, 480
     img = backdrop(w, h)
-    logo = lockup(44, 18, 10)
-    img.alpha_composite(logo, ((w - logo.width) // 2, 30))
+    logo = lockup(36)
+    img.alpha_composite(logo, ((w - logo.width) // 2, 64))
     # Card behind the menu: its seven entries are text rows 10.5-17.5 (16px each,
     # vesamenu centers the 30 rows) and columns 14-67 (8px each).
     x0, y0, x1, y1 = 14 * 8 - 24, 168 - 22, 68 * 8 + 16, 168 + 7 * 16 + 22

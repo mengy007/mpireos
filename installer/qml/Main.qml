@@ -70,16 +70,16 @@ ApplicationWindow {
             anchors.leftMargin: 24
             anchors.rightMargin: 24
             spacing: 10
-            Rectangle {
-                Layout.preferredWidth: 18; Layout.preferredHeight: 18
-                radius: 6
-                gradient: Gradient {
-                    GradientStop { position: 0; color: Theme.accentHover }
-                    GradientStop { position: 1; color: Theme.accentPressed }
-                }
+            Image {
+                Layout.preferredWidth: 20; Layout.preferredHeight: 20
+                sourceSize: Qt.size(40, 40)
+                source: Qt.resolvedUrl("MpireSetup/images/mpireos-mark-small.svg")
+                smooth: true
             }
             Text {
-                text: "MpireOS"
+                // The wordmark: "Mpire" in ink, "OS" in logo cyan.
+                text: "Mpire<font color=\"" + Theme.brand + "\">OS</font>"
+                textFormat: Text.StyledText
                 color: Theme.text
                 font.family: Theme.fontFamily
                 font.pixelSize: 16

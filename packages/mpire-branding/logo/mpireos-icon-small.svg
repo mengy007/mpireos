@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>MpireOS</title>
+  <rect width="512" height="512" rx="112" fill="#062331"/>
+  <g transform="translate(66.56 67.61) scale(1.0466)">
+    <path fill="#00CBD7" d="M32 0L65 0L65 25L79 25L79 50L93 50L93 354L0 354L0 50L17 50L17 25L32 25zM276 39L347 11L347 59L353 59L353 354L260 354L260 59L276 59zM101 101L141 101L141 217.44L152 213.298L152 137L194 137L194 197.486L205 193.344L205 107L217 107L217 90L250 90L250 189.401L101 245.5z"/>
+    
+  </g>
+</svg>

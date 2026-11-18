@@ -53,9 +53,11 @@ Rectangle {
         anchors.rightMargin: 16
         spacing: 0
 
-        Mark { size: 16; Layout.rightMargin: 7 }
+        Mark { size: 18; Layout.rightMargin: 7 }
         Text {
-            text: "MpireOS"
+            // The wordmark: "Mpire" in ink, "OS" in logo cyan.
+            text: "Mpire<font color=\"" + Theme.brand + "\">OS</font>"
+            textFormat: Text.StyledText
             color: Theme.text
             font.family: Theme.fontFamily
             font.pixelSize: 13
