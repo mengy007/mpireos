@@ -204,7 +204,7 @@ for ((t = 0; t < timeout; t += 5)); do
             sleep 12
         done
         qemu_screenshot "$monitor" "${shot%.ppm}-glass-apps.ppm"
-        grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT -e MPIREOS_TRAY -e MPIREOS_AI "$log" || true
+        grep -a -e MPIREOS_SPLASH -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT -e MPIREOS_TRAY -e MPIREOS_AI "$log" || true
         exit 0
     fi
     if grep -q -e MPIREOS_DESKTOP_FAIL -e MPIREOS_SETUP_FAIL "$log"; then

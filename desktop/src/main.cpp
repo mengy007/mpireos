@@ -3,6 +3,7 @@
 // mpire-compositor later). See docs/architecture.md, "Desktop".
 #include <QCommandLineParser>
 #include <QDBusConnection>
+#include <QDBusConnectionInterface>
 #include <QDBusMessage>
 #include <QDir>
 #include <QGuiApplication>
@@ -14,6 +15,7 @@
 #include <QQuickView>
 #include <QRegion>
 #include <QScreen>
+#include <QTimer>
 #include <QUrl>
 
 #include <memory>
@@ -131,6 +133,50 @@ int main(int argc, char *argv[])
         qWarning("mpire-shell: another notification server is running; apps' notifications won't show here");
     tray.start();
 
+    // The splash after login (KSplash) waits for plasmashell to say the desktop
+    // is drawn. We take plasmashell's place, so we say it instead, once the
+    // desktop's first frame is up (below); otherwise the splash covers the
+    // desktop until systemd gives up on it after 40 seconds.
+    //  - Plasma 6.6 and earlier: KSplash counts start-up stages and closes at
+    //    the sixth; plasmashell sends "desktop". We send "desktop", and
+    //    "ready" a moment later, after the splash has faded to the desktop.
+    //  - Later Plasma: KSplash closes when org.kde.PlasmaLoading leaves the
+    //    bus; plasmashell takes the name over from startplasma and releases it.
+    // If the splash is somehow still up after that, its service is stopped.
+    bus.interface()->registerService(QStringLiteral("org.kde.PlasmaLoading"),
+                                     QDBusConnectionInterface::ReplaceExistingService);
+    const auto splashStage = [](const QString &stage) {
+        QDBusMessage msg = QDBusMessage::createMethodCall(QStringLiteral("org.kde.KSplash"), QStringLiteral("/KSplash"),
+                                                          QStringLiteral("org.kde.KSplash"), QStringLiteral("setStage"));
+        msg << stage;
+        // Only the running splash: KSplash is D-Bus activatable, so a call
+        // after it has closed would otherwise start a new one.
+        msg.setAutoStartService(false);
+        QDBusConnection::sessionBus().asyncCall(msg);
+    };
+    const auto desktopReady = [splashStage] {
+        static bool done = false;
+        if (done)
+            return;
+        done = true;
+        splashStage(QStringLiteral("desktop"));
+        QTimer::singleShot(350, [splashStage] {
+            splashStage(QStringLiteral("ready"));
+            QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.PlasmaLoading"));
+        });
+        QTimer::singleShot(2000, [] {
+            QDBusConnection bus = QDBusConnection::sessionBus();
+            if (!bus.interface()->isServiceRegistered(QStringLiteral("org.kde.KSplash")))
+                return;
+            QDBusMessage stop = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.systemd1"),
+                                                               QStringLiteral("/org/freedesktop/systemd1"),
+                                                               QStringLiteral("org.freedesktop.systemd1.Manager"),
+                                                               QStringLiteral("StopUnit"));
+            stop << QStringLiteral("plasma-ksplash.service") << QStringLiteral("replace");
+            bus.asyncCall(stop);
+        });
+    };
+
     QQmlEngine engine;
     engine.addImageProvider(QStringLiteral("icon"), new IconProvider);
     engine.addImageProvider(QStringLiteral("tray"), new TrayIconProvider(&tray));
@@ -163,6 +209,10 @@ int main(int argc, char *argv[])
     bg->setExclusiveZone(-1);
     background->resize(size);
     background->show();
+    // The desktop is up once the wallpaper has drawn: let the splash go (and
+    // don't hold it past a few seconds if the first frame is slow).
+    QObject::connect(background, &QQuickWindow::frameSwapped, background, desktopReady, Qt::SingleShotConnection);
+    QTimer::singleShot(8000, background, desktopReady);
 
     // Top bar: full width, and windows don't go under it.
     QQuickView *topBar = makeSurface(&engine, QStringLiteral("surfaces/TopBarSurface.qml"), screen);

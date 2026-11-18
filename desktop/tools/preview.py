@@ -4,6 +4,7 @@
     pip install PySide6-Essentials
     python3 desktop/tools/preview.py desktop  [--shot out.png]
     python3 desktop/tools/preview.py greeter  [--shot out.png] [--fake-sddm]
+    python3 desktop/tools/preview.py splash   [--shot out.png] [--stage 1-5]
     python3 desktop/tools/preview.py shell-background|shell-topbar|shell-dock [--shot out.png]
     python3 desktop/tools/preview.py panels --panel search|assistant|ai-settings|launcher|quick-settings|notifications|popups|desktop-menu|wallpaper|tray-menu
                                             [--query "text"] [--ai none|ready|chat|streaming] [--ai-tab cloud|local|network] [--menu-at 520,300] [--wallpaper mpire:lagoon] [--shot out.png]
@@ -27,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SCENES = {
     "desktop": ROOT / "shell" / "Desktop.qml",
     "greeter": ROOT / "greeter" / "Main.qml",
+    "splash": ROOT / "kde" / "lookandfeel" / "contents" / "splash" / "Splash.qml",
     "shell-background": ROOT / "shell" / "surfaces" / "BackgroundSurface.qml",
     "shell-topbar": ROOT / "shell" / "surfaces" / "TopBarSurface.qml",
     "shell-dock": ROOT / "shell" / "surfaces" / "DockSurface.qml",
@@ -599,6 +601,7 @@ def main() -> int:
                         help="the assistant's state: nothing set up, ready, a conversation, or a reply streaming in")
     parser.add_argument("--ai-tab", default="", help="ai-settings: cloud, local, or network")
     parser.add_argument("--light", action="store_true", help="the shell's light theme (Mpire Desktop is dark by default)")
+    parser.add_argument("--stage", type=int, default=2, help="splash: the start-up stage ksplashqml would set (5 = ready)")
     parser.add_argument("--pictures", type=Path, nargs="*", default=[], help="wallpaper picker: sample pictures")
     args = parser.parse_args()
     w, h = (int(x) for x in args.size.split("x"))
@@ -633,7 +636,7 @@ def main() -> int:
         ctx.setContextProperty("sddm", sddm)
         ctx.setContextProperty("userModel", users)
         ctx.setContextProperty("sessionModel", sessions)
-    if args.scene != "greeter" and not args.light:
+    if args.scene not in ("greeter", "splash") and not args.light:
         # As mpire-shell does: the shell's dark glass theme.
         dark = QQmlComponent(view.engine())
         dark.setData(b"import QtQuick; import MpireOS.Style; QtObject { Component.onCompleted: Theme.dark = true }", QUrl())
@@ -645,6 +648,8 @@ def main() -> int:
         return 1
     if args.time:
         view.rootObject().setProperty("now", now)
+    if args.scene == "splash":
+        view.rootObject().setProperty("stage", args.stage)
     view.show()
     if args.ai_tab:
         view.rootObject().findChild(QObject, "panelSurface").setProperty("aiTab", args.ai_tab)
