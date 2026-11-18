@@ -198,6 +198,7 @@ COPIES = {
     "desktop/style/MpireOS/Style/images": ["mpireos-mark.svg", "mpireos-mark-small.svg"],
     "installer/qml/MpireSetup/images": ["mpireos-mark.svg", "mpireos-mark-small.svg",
                                         "mpireos-logo-light.svg"],
+    "desktop/kde/lookandfeel/contents/splash/images": ["mpireos-logo-light.svg"],
 }
 
 

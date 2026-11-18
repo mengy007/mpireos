@@ -2,11 +2,11 @@
     "KPackageStructure": "Plasma/LookAndFeel",
     "KPlugin": {
         "Authors": [{ "Name": "MpireOS contributors" }],
-        "Description": "The MpireOS look for the KDE pieces MpireOS still uses",
+        "Description": "The MpireOS look for the KDE pieces MpireOS still uses, and its splash after login",
         "Id": "org.mpireos.desktop",
         "License": "GPL-3.0-or-later",
         "Name": "MpireOS",
-        "Version": "0.2",
+        "Version": "0.3",
         "Website": "https://github.com/mengy007/mpireos"
     }
 }
