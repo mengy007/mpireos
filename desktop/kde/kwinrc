@@ -1,7 +1,9 @@
-# MpireOS window defaults: light, quiet title bars with buttons on the right.
+# MpireOS window defaults: Mpire window frames (desktop/decoration), with
+# minimize, maximize and close on the right. KWin falls back to Breeze if
+# the frames can't load.
 [org.kde.kdecoration2]
-library=org.kde.breeze
-theme=Breeze
+library=org.mpireos.decoration
+theme=
 ButtonsOnLeft=
 ButtonsOnRight=IAX
 BorderSize=None
@@ -13,6 +15,14 @@ contrastEnabled=true
 
 [Windows]
 BorderlessMaximizedWindows=false
+
+# Three workspaces, shown as dots in the top bar.
+[Desktops]
+Number=3
+Rows=1
+Name_1=Workspace 1
+Name_2=Workspace 2
+Name_3=Workspace 3
 
 # Tapping Meta opens MpireOS's launcher (mpire-shell), not Plasma's menu.
 [ModifierOnlyShortcuts]

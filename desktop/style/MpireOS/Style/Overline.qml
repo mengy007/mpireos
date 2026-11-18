@@ -2,9 +2,9 @@ import QtQuick
 
 Text {
     color: Theme.textTertiary
-    font.family: Theme.fontFamily
+    font.family: Theme.dark ? Theme.fontMono : Theme.fontFamily
     font.pixelSize: Theme.fontOverline
     font.weight: Font.DemiBold
     font.capitalization: Font.AllUppercase
-    font.letterSpacing: 1.4
+    font.letterSpacing: Theme.dark ? 1.0 : 1.4
 }

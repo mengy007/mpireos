@@ -2,8 +2,9 @@ import QtQuick
 import QtQuick.Layouts
 import MpireOS.Style
 
-// The frosted top bar: mark and app menus, workspace pill, the system tray,
-// and clock. The tray on the right holds other apps' status icons (from
+// The top bar: the MpireOS mark and wordmark, workspace indicators, the
+// system tray, and the clock. In the dark theme it has no panel at all, just
+// a soft shade at the top of the screen so it reads on any wallpaper. The tray on the right holds other apps' status icons (from
 // systemTray, src/tray.h), newest leftmost, then MpireOS's own: the AI
 // assistant, search, notifications, network, quick settings, battery.
 // Parts with nothing real to show stay hidden: no app name or menus until the
@@ -12,7 +13,10 @@ Rectangle {
     id: bar
     property string appName: ""
     property var menus: []
-    property string workspace: ""
+    // Workspaces: a cyan dash for the one showing, a ring for each other.
+    property int workspaceCount: 0
+    property int currentWorkspace: -1
+    signal workspaceClicked(int index)
     property int battery: -1               // percent, or -1 when there is no battery
     property bool showNotifications: true
     property int unread: 0                  // dot on the bell
@@ -35,17 +39,27 @@ Rectangle {
     signal networkClicked()
     signal settingsClicked()
 
+    // Hover and pressed fills that suit the theme.
+    function wash(amount) { return Theme.dark ? Qt.rgba(1, 1, 1, amount * 1.1) : Qt.rgba(0.043, 0.122, 0.145, amount) }
+
     component TrayIcon: Icon {
         signal clicked()
         size: 16
+        weight: Theme.dark ? 1.45 : 1.6
         color: Theme.text
         opacity: trayArea.containsMouse ? 0.7 : 1
         MouseArea { id: trayArea; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: parent.clicked() }
     }
 
     implicitHeight: Theme.topBarHeight
-    color: Theme.chrome
-    Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Theme.divider }
+    color: Theme.dark ? "transparent" : Theme.chrome
+    gradient: Theme.dark ? shade : null
+    Gradient {
+        id: shade
+        GradientStop { position: 0; color: "#66000000" }
+        GradientStop { position: 1; color: "#00000000" }
+    }
+    Rectangle { visible: !Theme.dark; anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Theme.divider }
 
     RowLayout {
         anchors.fill: parent
@@ -58,11 +72,41 @@ Rectangle {
             // The wordmark: "Mpire" in ink, "OS" in logo cyan.
             text: "Mpire<font color=\"" + Theme.brand + "\">OS</font>"
             textFormat: Text.StyledText
-            color: Theme.text
+            color: Theme.dark ? "#F2F7F8" : Theme.text
             font.family: Theme.fontFamily
             font.pixelSize: 13
             font.weight: Font.DemiBold
             font.letterSpacing: -0.4
+        }
+        Row {
+            id: workspaceDots
+            objectName: "workspaces"
+            visible: bar.workspaceCount > 1
+            Layout.leftMargin: 26
+            spacing: 4
+            Repeater {
+                model: bar.workspaceCount
+                Item {
+                    id: dot
+                    required property int index
+                    readonly property bool current: index === bar.currentWorkspace
+                    width: current ? 26 : 15
+                    height: 20
+                    Behavior on width { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: dot.current ? 18 : 7
+                        height: dot.current ? 2.5 : 7
+                        radius: height / 2
+                        color: dot.current ? Theme.brand : "transparent"
+                        border.width: dot.current ? 0 : 1.3
+                        border.color: Theme.dark ? Qt.rgba(1, 1, 1, dotArea.containsMouse ? 0.9 : 0.55) : Theme.textSecondary
+                        Behavior on width { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+                        Behavior on height { NumberAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+                    }
+                    MouseArea { id: dotArea; anchors.fill: parent; hoverEnabled: true; onClicked: bar.workspaceClicked(dot.index) }
+                }
+            }
         }
         Rectangle { visible: bar.appName.length > 0; Layout.leftMargin: 12; Layout.rightMargin: 12; Layout.preferredWidth: 1; Layout.preferredHeight: 12; color: Theme.border }
         Text {
@@ -87,30 +131,6 @@ Rectangle {
         Item { Layout.fillWidth: true }
     }
 
-    // Workspace pill, centered on the screen.
-    Rectangle {
-        visible: bar.workspace.length > 0
-        anchors.centerIn: parent
-        height: 22
-        width: wsRow.implicitWidth + 20
-        radius: 11
-        color: wsArea.containsMouse ? "#B3FFFFFF" : "transparent"
-        RowLayout {
-            id: wsRow
-            anchors.centerIn: parent
-            spacing: 8
-            Rectangle { Layout.preferredWidth: 6; Layout.preferredHeight: 6; radius: 3; color: Theme.accent }
-            Text {
-                text: bar.workspace
-                color: Theme.textSecondary
-                font.family: Theme.fontFamily
-                font.pixelSize: 12
-            }
-            Icon { name: "chevronDown"; size: 12 }
-        }
-        MouseArea { id: wsArea; anchors.fill: parent; hoverEnabled: true }
-    }
-
     RowLayout {
         anchors.right: parent.right
         anchors.rightMargin: 16
@@ -132,8 +152,8 @@ Rectangle {
                     width: 26
                     height: 22
                     radius: 7
-                    color: bar.openTrayKey === modelData.key ? "#1F0B1F25"
-                         : appArea.pressed ? "#1A0B1F25" : appArea.containsMouse ? "#0F0B1F25" : "transparent"
+                    color: bar.openTrayKey === modelData.key ? bar.wash(0.12)
+                         : appArea.pressed ? bar.wash(0.10) : appArea.containsMouse ? bar.wash(0.06) : "transparent"
                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
                     Image {
                         anchors.centerIn: parent
@@ -150,7 +170,7 @@ Rectangle {
                         anchors { right: parent.right; top: parent.top; rightMargin: 3; topMargin: 2 }
                         width: 6; height: 6; radius: 3
                         color: Theme.accent
-                        border.color: "white"
+                        border.color: Theme.dark ? "#0E171B" : "white"
                     }
                     MouseArea {
                         id: appArea
@@ -183,7 +203,7 @@ Rectangle {
                 anchors { right: parent.right; top: parent.top; rightMargin: -1; topMargin: -1 }
                 width: 7; height: 7; radius: 3.5
                 color: Theme.accent
-                border.color: "white"
+                border.color: Theme.dark ? "#0E171B" : "white"
             }
         }
         TrayIcon { name: bar.wired ? "ethernet" : bar.online ? "wifi" : "wifiOff"; opacity: bar.online ? 1 : 0.55; onClicked: bar.networkClicked() }
@@ -195,17 +215,18 @@ Rectangle {
             Text {
                 text: bar.battery + "%"
                 color: Theme.text
-                font.family: Theme.fontFamily
+                font.family: Theme.dark ? Theme.fontMono : Theme.fontFamily
                 font.pixelSize: 12
             }
         }
+        Rectangle { visible: Theme.dark; Layout.leftMargin: 2; Layout.preferredWidth: 1; Layout.preferredHeight: 14; color: Qt.rgba(1, 1, 1, 0.28) }
         Text {
-            Layout.leftMargin: 6
+            Layout.leftMargin: Theme.dark ? 2 : 6
             text: Qt.formatTime(bar.now, "h:mm AP")
             color: Theme.text
-            font.family: Theme.fontFamily
+            font.family: Theme.dark ? Theme.fontMono : Theme.fontFamily
             font.pixelSize: 12
-            font.weight: Font.DemiBold
+            font.weight: Theme.dark ? Font.Medium : Font.DemiBold
             font.features: { "tnum": 1 }
         }
     }

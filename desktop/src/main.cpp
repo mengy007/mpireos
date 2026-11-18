@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
@@ -15,17 +16,21 @@
 #include <QScreen>
 #include <QUrl>
 
+#include <memory>
+
 #include <LayerShellQt/Window>
 
 #include "ai.h"
 #include "apps.h"
 #include "desktopsettings.h"
 #include "filesearch.h"
+#include "glass.h"
 #include "iconprovider.h"
 #include "notifications.h"
 #include "shellapi.h"
 #include "systemstatus.h"
 #include "tray.h"
+#include "workspaces.h"
 
 using LayerShellQt::Window;
 
@@ -115,6 +120,8 @@ int main(int argc, char *argv[])
     FileSearch files;
     SystemTray tray;
     AiAssistant ai;
+    Workspaces workspaces;
+    Glass glass;
 
     QDBusConnection bus = QDBusConnection::sessionBus();
     if (!bus.registerObject(QString::fromLatin1(kPath), &api, QDBusConnection::ExportScriptableSlots)
@@ -135,6 +142,15 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("fileSearch"), &files);
     engine.rootContext()->setContextProperty(QStringLiteral("systemTray"), &tray);
     engine.rootContext()->setContextProperty(QStringLiteral("ai"), &ai);
+    engine.rootContext()->setContextProperty(QStringLiteral("workspaces"), &workspaces);
+    engine.rootContext()->setContextProperty(QStringLiteral("shellGlass"), &glass);
+    // The shell is dark: frosted dark glass panels, like the window frames
+    // (MpireOS.Style's Theme.dark). Set before any surface loads.
+    QQmlComponent darkTheme(&engine);
+    darkTheme.setData("import QtQuick; import MpireOS.Style; QtObject { Component.onCompleted: Theme.dark = true }", QUrl());
+    std::unique_ptr<QObject> darkThemeSetter(darkTheme.create());
+    if (!darkThemeSetter)
+        qWarning("mpire-shell: could not switch to the dark theme: %s", qPrintable(darkTheme.errorString()));
 
     QScreen *screen = QGuiApplication::primaryScreen();
     const QSize size = screen->size();
@@ -223,6 +239,8 @@ int main(int argc, char *argv[])
         panels->requestActivate();
     });
 
+    glass.track(panels);         // blur behind open panels
+
     // Notification popups: top right, below the top bar, as tall as the popups.
     QQuickView *popups = makeSurface(&engine, QStringLiteral("surfaces/PopupSurface.qml"), screen);
     Window *pp = layer(popups, Window::LayerOverlay, Window::Anchors(Window::AnchorTop | Window::AnchorRight),
@@ -239,6 +257,7 @@ int main(int argc, char *argv[])
         if (!popups->isVisible())
             popups->show();
     };
+    glass.track(popups);
     QObject::connect(popupItem, &QQuickItem::implicitHeightChanged, popups, fitPopups);
     fitPopups();
 

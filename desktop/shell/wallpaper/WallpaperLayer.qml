@@ -21,7 +21,14 @@ Item {
     // Ours: the default backdrop
     Backdrop {
         anchors.fill: parent
-        visible: root.kind === "mpire" && !root.spec.from || root.failed
+        visible: root.kind === "mpire" && !root.spec.from && !root.spec.scene || root.failed
+    }
+
+    // Ours: a drawn scene
+    Loader {
+        anchors.fill: parent
+        active: root.kind === "mpire" && root.spec.scene === "fjord"
+        sourceComponent: Fjord {}
     }
 
     // Ours: wash, glow, rings

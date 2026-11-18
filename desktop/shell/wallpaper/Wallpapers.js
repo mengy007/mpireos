@@ -2,8 +2,10 @@
 // MpireOS's own wallpapers, drawn by WallpaperLayer.qml (no image files):
 // a diagonal wash from `from` to `to`, a soft glow, and broad light rings like
 // the default backdrop. Colors come from the MpireOS palette (design-system.md).
-// "mist" is the default, the same backdrop the installer and login screen use.
+// "fjord" (a moonlit lake, Fjord.qml) is Mpire Desktop's default; "mist" is
+// the backdrop the installer and login screen use.
 var builtIn = [
+    { id: "mpire:fjord", name: "Night fjord", scene: "fjord", dark: true },
     { id: "mpire:mist", name: "Morning mist" },
     { id: "mpire:lagoon", name: "Lagoon", from: "#4DBDC0", to: "#094551", glow: "#B8ECEC", glowAt: [0.18, 0.12], ring: "#FFFFFF", ringOpacity: 0.22 },
     { id: "mpire:lavender", name: "Lavender", from: "#F5F2FC", to: "#C3B6EA", glow: "#FFFFFF", glowAt: [0.25, 0.2], ring: "#FFFFFF", ringOpacity: 0.5 },

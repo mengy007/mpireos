@@ -1,6 +1,7 @@
 import QtQuick
 
-// The MpireOS desktop backdrop: pale teal-gray with broad, soft light sweeps.
+// The MpireOS backdrop (installer, login, "Morning mist" wallpaper): pale
+// teal-gray with broad, soft light sweeps. Always light, whatever the theme.
 Item {
     id: root
     clip: true
@@ -8,8 +9,8 @@ Item {
         anchors.fill: parent
         gradient: Gradient {
             orientation: Gradient.Horizontal
-            GradientStop { position: 0.0; color: Theme.backdropHighlight }
-            GradientStop { position: 1.0; color: Theme.backdrop }
+            GradientStop { position: 0.0; color: "#F4F8F9" }
+            GradientStop { position: 1.0; color: "#E4EDEF" }
         }
     }
     Repeater {

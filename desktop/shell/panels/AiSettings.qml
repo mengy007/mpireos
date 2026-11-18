@@ -243,40 +243,16 @@ Card {
                 // ---- Add AI ----
                 SectionTitle { Layout.leftMargin: 22; Layout.topMargin: 24; text: qsTr("Add AI") }
                 // Where it runs
-                Rectangle {
+                Tabs {
                     Layout.fillWidth: true
                     Layout.leftMargin: 16
                     Layout.rightMargin: 16
-                    Layout.topMargin: 10
-                    Layout.preferredHeight: 40
-                    radius: 12
-                    color: Theme.surfaceSunken
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 4
-                        spacing: 4
-                        Repeater {
-                            model: [{ id: "cloud", glyph: "cloud", label: qsTr("Cloud") },
-                                    { id: "local", glyph: "monitor", label: qsTr("This computer") },
-                                    { id: "network", glyph: "network", label: qsTr("Your network") }]
-                            delegate: Rectangle {
-                                required property var modelData
-                                readonly property bool on: root.tab === modelData.id
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                radius: 9
-                                color: on ? Theme.surface : tabArea.containsMouse ? Theme.surfaceHover : "transparent"
-                                border.color: on ? Theme.border : "transparent"
-                                Row {
-                                    anchors.centerIn: parent
-                                    spacing: 7
-                                    Icon { name: modelData.glyph; size: 15; color: on ? Theme.accentText : Theme.textSecondary; anchors.verticalCenter: parent.verticalCenter }
-                                    Text { text: modelData.label; color: on ? Theme.text : Theme.textSecondary; font.family: Theme.fontFamily; font.pixelSize: 12; font.weight: on ? Font.DemiBold : Font.Normal }
-                                }
-                                MouseArea { id: tabArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { root.tab = modelData.id; root.ai.clearNotice() } }
-                            }
-                        }
-                    }
+                    Layout.topMargin: 6
+                    model: [{ id: "cloud", glyph: "cloud", label: qsTr("Cloud") },
+                            { id: "local", glyph: "monitor", label: qsTr("This computer") },
+                            { id: "network", glyph: "network", label: qsTr("Your network") }]
+                    current: root.tab
+                    onPicked: id => { root.tab = id; root.ai.clearNotice() }
                 }
 
                 // Cloud: pick a service, paste a key.

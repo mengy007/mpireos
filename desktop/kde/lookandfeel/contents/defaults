@@ -5,11 +5,11 @@
 widgetStyle=Breeze
 
 [kdeglobals][General]
-ColorScheme=MpireOS
-AccentColor=124,102,214
+ColorScheme=MpireOSDark
+AccentColor=0,180,193
 
 [kdeglobals][Icons]
-Theme=breeze
+Theme=breeze-dark
 
 [plasmarc][Theme]
 name=default
@@ -24,8 +24,8 @@ LayoutName=org.kde.breeze.desktop
 LayoutName=org.kde.breeze.desktop
 
 [kwinrc][org.kde.kdecoration2]
-library=org.kde.breeze
-theme=Breeze
+library=org.mpireos.decoration
+theme=
 
 [KSplash]
 Engine=none

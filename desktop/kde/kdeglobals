@@ -1,11 +1,12 @@
-# MpireOS defaults for KDE and Qt apps (system-wide; users can still change them).
+# MpireOS defaults for KDE and Qt apps (system-wide; users can still change them):
+# dark, to match Mpire Desktop's glass, with monospace window titles.
 [General]
-ColorScheme=MpireOS
+ColorScheme=MpireOSDark
 font=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 menuFont=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 smallestReadableFont=Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 toolBarFont=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
-fixed=Hack,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+fixed=JetBrains Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 AccentColor=0,180,193
 
 [KDE]
@@ -15,7 +16,7 @@ SingleClick=false
 AnimationDurationFactor=0.8
 
 [Icons]
-Theme=breeze
+Theme=breeze-dark
 
 [WM]
-activeFont=Inter,10,-1,5,600,0,0,0,0,0,0,0,0,0,0,1
+activeFont=JetBrains Mono,10,-1,5,500,0,0,0,0,0,0,0,0,0,0,1

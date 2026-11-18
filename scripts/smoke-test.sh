@@ -177,7 +177,7 @@ for ((t = 0; t < timeout; t += 5)); do
         qemu_click "$qmp" 580 284 left "$ref"
         sleep 4
         qemu_screenshot "$monitor" "${shot%.ppm}-wallpaper-picker.ppm"
-        qemu_click "$qmp" 548 228 left "$ref"
+        qemu_click "$qmp" 730 228 left "$ref"
         sleep 3
         qemu_screenshot "$monitor" "${shot%.ppm}-wallpaper-lagoon.ppm"
         qemu_click "$qmp" 956 721 left "$ref"

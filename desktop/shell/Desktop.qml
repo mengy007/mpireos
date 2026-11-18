@@ -13,7 +13,7 @@ Item {
 
     Wallpaper {
         anchors.fill: parent
-        source: desktop.hasSettings ? desktopSettings.wallpaper : "mpire:mist"
+        source: desktop.hasSettings ? desktopSettings.wallpaper : "mpire:fjord"
         fillMode: desktop.hasSettings ? desktopSettings.fillMode : "fill"
     }
 
@@ -21,6 +21,9 @@ Item {
         anchors { left: parent.left; right: parent.right; top: parent.top }
         now: desktop.now
         battery: 98; showNotifications: true
+        workspaceCount: typeof workspaces !== "undefined" ? workspaces.count : 3
+        currentWorkspace: typeof workspaces !== "undefined" ? workspaces.current : 0
+        onWorkspaceClicked: index => { if (typeof workspaces !== "undefined") workspaces.activate(index) }
         trayItems: typeof systemTray !== "undefined" ? systemTray.items : []
         openTrayKey: typeof systemTray !== "undefined" && typeof shellApi !== "undefined" && shellApi.panel === "tray-menu" ? systemTray.menuKey : ""
     }

@@ -44,8 +44,8 @@ Item {
     // panels float without a scrim.
     Rectangle {
         anchors.fill: parent
-        color: Theme.text
-        opacity: surface.panel === "launcher" ? 0.16 : surface.panel === "search" || surface.panel === "ai-settings" ? 0.06 : 0
+        color: Theme.dark ? "black" : Theme.text
+        opacity: surface.panel === "launcher" ? (Theme.dark ? 0.3 : 0.16) : surface.panel === "search" || surface.panel === "ai-settings" ? 0.06 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.animNormal } }
     }
     MouseArea {
