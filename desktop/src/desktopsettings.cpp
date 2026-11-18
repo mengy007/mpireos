@@ -23,7 +23,7 @@
 
 namespace {
 
-const QString kDefaultWallpaper = QStringLiteral("mpire:mist");
+const QString kDefaultWallpaper = QStringLiteral("mpire:fjord");
 const QStringList kImageFilters = {QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"), QStringLiteral("*.png"),
                                    QStringLiteral("*.webp"), QStringLiteral("*.avif"), QStringLiteral("*.jxl")};
 constexpr int kMaxPictures = 60;

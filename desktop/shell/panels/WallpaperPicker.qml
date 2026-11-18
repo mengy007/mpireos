@@ -13,7 +13,7 @@ Card {
     property real maxHeight: 720
     signal done()
 
-    readonly property string current: settings ? settings.wallpaper : "mpire:mist"
+    readonly property string current: settings ? settings.wallpaper : "mpire:fjord"
     readonly property bool currentIsPicture: Wallpapers.kind(current) === "picture"
     readonly property var pictures: settings ? settings.pictures : []
     readonly property int columns: 4

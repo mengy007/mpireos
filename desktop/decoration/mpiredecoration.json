@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "org.mpireos.decoration",
+        "Name": "Mpire",
+        "Description": "MpireOS window frames: frosted dark title bars with a cyan glow on the focused window",
+        "EnabledByDefault": true,
+        "License": "GPL-3.0-or-later",
+        "Website": "https://github.com/mengy007/mpireos"
+    },
+    "org.kde.kdecoration3": {
+        "blur": true,
+        "recommendedBorderSize": "None"
+    }
+}

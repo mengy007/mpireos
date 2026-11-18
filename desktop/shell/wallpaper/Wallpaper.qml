@@ -4,7 +4,7 @@ import QtQuick
 // picture has loaded), so trying wallpapers in the picker feels calm.
 Item {
     id: root
-    property string source: "mpire:mist"
+    property string source: "mpire:fjord"
     property string fillMode: "fill"
 
     property int front: 0

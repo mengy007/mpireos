@@ -20,6 +20,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QPointF, QDate, QDateTime, QObject, Property, QRectF, QTime, QTimer, QUrl, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QPainter, QPixmap, QStandardItem, QStandardItemModel
+from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickImageProvider, QQuickView
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -216,7 +217,7 @@ class FakeDesktopSettings(QObject):
     picturesChanged = Signal()
     browsingChanged = Signal()
 
-    def __init__(self, wallpaper="mpire:mist", pictures=()):
+    def __init__(self, wallpaper="mpire:fjord", pictures=()):
         super().__init__()
         self._wallpaper, self._fill, self._autohide = wallpaper, "fill", True
         self._pictures = [dict(url=QUrl.fromLocalFile(str(p)).toString(), name=p.stem.replace("-", " ").capitalize())
@@ -557,6 +558,32 @@ class FakeUsers(QStandardItemModel):
         return ""
 
 
+class FakeWorkspaces(QObject):
+    """Stands in for mpire-shell's workspaces (src/workspaces.h): three, the first showing."""
+    changed = Signal()
+
+    def __init__(self):
+        super().__init__()
+        self._current = 0
+
+    @Property(int, notify=changed)
+    def count(self): return 3
+
+    @Property(int, notify=changed)
+    def current(self): return self._current
+
+    @Property("QStringList", notify=changed)
+    def names(self): return ["Workspace 1", "Workspace 2", "Workspace 3"]
+
+    @Slot(int)
+    def activate(self, index):
+        self._current = index
+        self.changed.emit()
+
+    @Slot()
+    def refresh(self): pass
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("scene", choices=SCENES)
@@ -567,10 +594,11 @@ def main() -> int:
     parser.add_argument("--panel", default="", help="panels: search, launcher, quick-settings, notifications, popups, desktop-menu, wallpaper, or tray-menu")
     parser.add_argument("--query", default="", help="panels: text typed into search or the launcher")
     parser.add_argument("--menu-at", default="-1,-1", help="panels: where the desktop menu opens, x,y")
-    parser.add_argument("--wallpaper", default="mpire:mist", help="the desktop's wallpaper, e.g. mpire:lagoon")
+    parser.add_argument("--wallpaper", default="mpire:fjord", help="the desktop's wallpaper, e.g. mpire:lagoon")
     parser.add_argument("--ai", default="ready", choices=["none", "ready", "chat", "streaming"],
                         help="the assistant's state: nothing set up, ready, a conversation, or a reply streaming in")
     parser.add_argument("--ai-tab", default="", help="ai-settings: cloud, local, or network")
+    parser.add_argument("--light", action="store_true", help="the shell's light theme (Mpire Desktop is dark by default)")
     parser.add_argument("--pictures", type=Path, nargs="*", default=[], help="wallpaper picker: sample pictures")
     args = parser.parse_args()
     w, h = (int(x) for x in args.size.split("x"))
@@ -587,7 +615,7 @@ def main() -> int:
     menu_at = tuple(float(v) for v in args.menu_at.split(","))
     keep = [FakeShellApi("" if args.panel == "popups" else args.panel, menu_at), FakeAppIndex(), FakeNotifications(now),
             FakeSystemStatus(), FakeDesktopSettings(args.wallpaper, args.pictures),
-            FakeSystemTray(args.panel == "tray-menu"), FakeFileSearch(), FakeAi(args.ai)]
+            FakeSystemTray(args.panel == "tray-menu"), FakeFileSearch(), FakeAi(args.ai), FakeWorkspaces()]
     ctx.setContextProperty("shellApi", keep[0])
     ctx.setContextProperty("appIndex", keep[1])
     ctx.setContextProperty("notifications", keep[2])
@@ -596,6 +624,7 @@ def main() -> int:
     ctx.setContextProperty("systemTray", keep[5])
     ctx.setContextProperty("fileSearch", keep[6])
     ctx.setContextProperty("ai", keep[7])
+    ctx.setContextProperty("workspaces", keep[8])
     view.engine().addImageProvider("icon", LetterIcons())
     view.engine().addImageProvider("tray", TrayIcons())
     if args.fake_sddm:
@@ -604,6 +633,11 @@ def main() -> int:
         ctx.setContextProperty("sddm", sddm)
         ctx.setContextProperty("userModel", users)
         ctx.setContextProperty("sessionModel", sessions)
+    if args.scene != "greeter" and not args.light:
+        # As mpire-shell does: the shell's dark glass theme.
+        dark = QQmlComponent(view.engine())
+        dark.setData(b"import QtQuick; import MpireOS.Style; QtObject { Component.onCompleted: Theme.dark = true }", QUrl())
+        keep.append(dark.create())
     view.setSource(QUrl.fromLocalFile(str(SCENES[args.scene])))
     if view.status() != QQuickView.Ready:
         for e in view.errors():

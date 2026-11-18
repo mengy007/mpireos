@@ -9,6 +9,9 @@ TopBar {
     online: systemStatus.networkKind.length > 0
     wired: systemStatus.networkKind === "wired"
     trayItems: systemTray.items
+    workspaceCount: workspaces.count
+    currentWorkspace: workspaces.current
+    onWorkspaceClicked: index => workspaces.activate(index)
     openTrayKey: shellApi.panel === "tray-menu" ? systemTray.menuKey : ""
     Timer { interval: 5000; repeat: true; running: true; triggeredOnStart: true; onTriggered: surface.now = new Date() }
     onSearchClicked: shellApi.TogglePanel("search")

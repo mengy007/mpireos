@@ -6,8 +6,9 @@ import MpireOS.Style
 Item {
     id: root
     property string glyph: "grid"
-    property color topColor: "#FFFFFF"
-    property color bottomColor: "#EEF3F5"
+    // Plain tiles: white, or dark glass in the dark theme.
+    property color topColor: Theme.dark ? "#2B3B41" : "#FFFFFF"
+    property color bottomColor: Theme.dark ? "#162226" : "#EEF3F5"
     property color glyphColor: Theme.textSecondary
     property real size: 52
     property bool running: false
@@ -22,7 +23,7 @@ Item {
     RectangularShadow {
         anchors.fill: face
         radius: face.radius
-        color: Qt.rgba(0.043, 0.227, 0.267, 0.10)
+        color: Theme.dark ? Qt.rgba(0, 0, 0, 0.35) : Qt.rgba(0.043, 0.227, 0.267, 0.10)
         blur: 12
         offset.y: 4
     }
@@ -30,7 +31,7 @@ Item {
         id: face
         anchors.fill: parent
         radius: root.size * 0.28
-        border.color: Qt.rgba(1, 1, 1, 0.7)
+        border.color: Qt.rgba(1, 1, 1, Theme.dark ? 0.16 : 0.7)
         gradient: Gradient {
             GradientStop { position: 0; color: root.topColor }
             GradientStop { position: 1; color: root.bottomColor }

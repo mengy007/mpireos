@@ -84,7 +84,20 @@ Danger is reserved for actions that destroy data. It is a soft rose-red, never a
 
 ### Dark theme
 
-Same structure, warm-tinted neutrals rather than pure gray: `backdrop #15141B`, `surface #1E1D26`, `surfaceSunken #191820`, `selection #2C2645`, `divider #2A2934`, `text #F2F1F7`, `textSecondary #A9A6B8`, `accent #9C88EE`. Pastels drop about 10% in lightness. Shadows become darker and tighter; the frosted chrome uses `#1E1D26` at 75%.
+**Mpire Desktop is dark** (since 0.6, after Meng's window and panel concept, Nov 2026): the shell, window frames, and apps share a deep teal-black, and everything that floats is **dark frosted glass**. Mpire Setup and the login screen stay light. The tokens are the same names with dark values (`Theme.dark` in MpireOS.Style; mpire-shell turns it on):
+
+| Token | Value | Use |
+|---|---|---|
+| `glass` | `#0E171B` at 88% | Panels, popups, menus (blurred behind) |
+| `glassBorder` | white at 16% | The hairline edge on all glass |
+| `surface` | `#111B1F` at 88% | Cards on glass |
+| `surfaceSunken` / `surfaceHover` | white at 7% / 10% | Fields, rows, hover |
+| `border` / `divider` | white at 15% / 8% | |
+| `text` / `textSecondary` / `textTertiary` | `#E2EAEC` / `#A3B1B6` / `#6E7F86` | |
+| `accent` / `accentText` | `#00BFCB` / `#4DD6DF` | Brighter than in light, for contrast |
+| `brand` | `#00CBD7` | Focus outline and glow, current workspace, tab underline |
+
+Apps get the **MpireOS Dark** color scheme (`desktop/kde/MpireOSDark.colors`: window `#121B1F`, view `#0E161A`, selection cyan with navy text) and Breeze Dark icons. The light **MpireOS** scheme is still installed.
 
 ## Typography
 
@@ -162,11 +175,10 @@ What Mpire Desktop looks like on a fresh install.
 
 ### Top bar
 
-A 44 px frosted bar across the top.
+A 30 px bar with **no panel**: just a soft shade at the top of the screen so it reads on any wallpaper.
 
-- **Left:** MpireOS mark and wordmark, a hairline divider, then the focused app's menus (for example Files, Applications, View) in `textSecondary`, with the app name in semibold `text`.
-- **Center:** the workspace pill: a small accent dot, the workspace name ("Personal space"), and a chevron to switch.
-- **Right:** search, notifications, Wi-Fi, quick settings, battery with percentage, then the time in semibold.
+- **Left:** MpireOS mark and wordmark ("Mpire" in white, "OS" in logo cyan), then the **workspace indicators**: a short cyan dash for the workspace showing and a small ring for each other one (three by default). Click one to switch.
+- **Right:** other apps' tray icons, then the AI assistant, search, notifications, network, quick settings, battery, a hairline, and the time in `fontMono`.
 
 ### Dock
 
@@ -178,11 +190,22 @@ The desktop is **just the wallpaper**: no icons, widgets, or greeting, so nothin
 
 - **Desktop menu** (right-click, or press and hold on a touch screen): a small white card at the pointer, `radius` 16, elevation 3, 36 px rows with an outline icon and 13 px text; the hovered row gets a `selection` tint. Rows: **Change wallpaper…** (semibold, it is the main thing people come for), Display settings, **Auto-hide the dock** (with a switch), then Open Files and Open Terminal, then All settings, with hairlines between the groups. It flips left or up near the screen's edges.
 - **Wallpaper picker**: a large card (`radius` 24, elevation 4) sitting low on the screen so the wallpaper shows above it. Choices apply **right away** and fade in, so trying things is free; Done just closes it. Sections, under overline labels: **MpireOS** (our own wallpapers, 16:9 thumbnails with names, the chosen one outlined in `accent` with a check badge), **Colors** (round swatches from the palette), and **Your pictures** (an "Add a picture" tile that opens the system file chooser, then pictures from `~/Pictures` and the system's wallpaper folders). The footer has the placement chips for pictures (Fill screen, Fit, Center, Tile) and an accent Done button.
-- **Our wallpapers** are drawn, not image files: a diagonal wash between two palette colors, a soft glow, and the same broad light rings as the backdrop. Morning mist (the backdrop itself, the default), Lagoon, Lavender, Daybreak, Meadow, Open sky, Sandstone, and Midnight.
+- **Our wallpapers** are drawn, not image files. **Night fjord** (the default): a moonlit sky over layered mountain ridges and a still lake that mirrors them, in deep teal-blacks. The rest are a diagonal wash between two palette colors, a soft glow, and the same broad light rings as the backdrop: Morning mist (the backdrop itself), Lagoon, Lavender, Daybreak, Meadow, Open sky, Sandstone, and Midnight.
 
 ### Windows
 
-White `surface`, `radiusWindow`, elevation 3 when focused. The title bar is part of the content area: a small icon, the app name in semibold, a secondary description in `textTertiary`, and minimize, maximize, and close as thin icons on the right (no colored traffic lights). Sidebars use `surfaceSunken`, with overline section labels, a `selection`-tinted active item in `accentText`, and colored dots for collections. Status bars are 32 px with small text and a green dot for healthy states.
+**Mpire window frames** (`desktop/decoration`, our own KWin decoration):
+
+- A 34 px title bar of **dark frosted glass** (the color scheme's title bar color at 86%, blurred behind), with a faint light sheen along the top.
+- The window title in **`fontMono`** (JetBrains Mono, the `[WM]` title font), left aligned, in `text`; dimmer on unfocused windows.
+- Minimize, maximize, and close as **thin line glyphs** on the right (a dash, a square, an ×); hover shows a soft light pill, red under close. No colored traffic lights.
+- **12 px rounded corners** on the whole window (KWin rounds the app's corners too) and a **1 px outline**: white at 14% on unfocused windows, **brand cyan** on the focused one, which also gets a soft **cyan glow** around it. Maximized windows drop the corners and outline.
+
+Inside apps and the shell's panels, tabs are **underline tabs**: monospace labels on a hairline, the current one bright with a 2 px cyan underline (`shell/panels/Tabs.qml`). Sidebars use `surfaceSunken`, with overline section labels (monospace in the dark theme), a `selection`-tinted active item in `accentText`.
+
+### Panels
+
+Search, the launcher, quick settings, notifications, the assistant, AI settings, menus, and popups are all **glass cards**: `glass` fill, `glassBorder` hairline, `radiusPanel` 18 to 22 px, a deep soft shadow, and the compositor blurs what's behind them (`desktop/src/glass.h`).
 
 ## Voice
 
