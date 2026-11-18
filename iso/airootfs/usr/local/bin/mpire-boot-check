@@ -62,7 +62,7 @@ ci_open_app() {
     [ -n "$shell_pid" ] && mapfile -d '' shell_env < "/proc/$shell_pid/environ"
     runuser -u live -- env -i "${shell_env[@]}" konsole >/tmp/ci-konsole.log 2>&1 &
     sleep 6
-    runuser -u live -- env -i "${shell_env[@]}" MPIRE_GLASS_DEBUG=1 dolphin >/tmp/ci-app.log 2>&1 &
+    runuser -u live -- env -i "${shell_env[@]}" MPIRE_GLASS_DEBUG=1 QT_FORCE_STDERR_LOGGING=1 dolphin >/tmp/ci-app.log 2>&1 &
     sleep 15
     report "MPIREOS_APP_LOG frames: $(ls /usr/lib/qt6/plugins/org.kde.kdecoration3/ 2>/dev/null | tr '\n' ' ')"
     report "MPIREOS_APP_LOG style: $(ls /usr/lib/qt6/plugins/styles/ 2>/dev/null | tr '\n' ' ')"

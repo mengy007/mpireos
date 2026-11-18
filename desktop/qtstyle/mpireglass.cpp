@@ -76,7 +76,7 @@ GlassStyle::GlassStyle()
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, QStringLiteral("MpireOS"), QStringLiteral("glass"));
     settings.beginGroup(QStringLiteral("Windows"));
     const bool enabled = settings.value(QStringLiteral("Enabled"), true).toBool();
-    m_opacity = std::clamp(settings.value(QStringLiteral("Opacity"), 0.72).toReal(), 0.0, 1.0);
+    m_opacity = std::clamp(settings.value(QStringLiteral("Opacity"), 0.62).toReal(), 0.0, 1.0);
     m_viewOpacity = std::clamp(settings.value(QStringLiteral("ViewOpacity"), 0.35).toReal(), 0.0, 1.0);
     QStringList exclude = settings.value(QStringLiteral("Exclude"), kDefaultExclude).toStringList();
     for (QString &name : exclude)

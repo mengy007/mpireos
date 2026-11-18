@@ -14,7 +14,7 @@
 //
 //   [Windows]
 //   Enabled=true         ; false: plain Breeze windows
-//   Opacity=0.72         ; window background, 0 (clear) to 1 (solid)
+//   Opacity=0.62         ; window background, 0 (clear) to 1 (solid)
 //   ViewOpacity=0.35     ; lists, tables, and text areas, on top of that
 //   Exclude=vlc,krita    ; apps (by name) that keep solid windows (default:
 //                        ; picture and video apps, kDefaultExclude)
@@ -59,7 +59,7 @@ private:
     void updateBlur(QWidget *window);
 
     bool m_enabled = false;
-    qreal m_opacity = 0.72;
+    qreal m_opacity = 0.62;
     qreal m_viewOpacity = 0.35;
     QSet<const QWidget *> m_windows;               // glass windows (polished)
     mutable QSet<const QWidget *> m_translucent;   // made see-through by us
