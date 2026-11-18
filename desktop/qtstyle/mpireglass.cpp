@@ -2,6 +2,7 @@
 #include "mpireglass.h"
 
 #include <QApplication>
+#include <QDockWidget>
 #include <QFrame>
 #include <QEvent>
 #include <QFileInfo>
@@ -104,7 +105,7 @@ bool GlassStyle::wantsGlass(const QWidget *widget) const
     if (widget->windowFlags().testFlag(Qt::FramelessWindowHint)
         || widget->windowFlags().testFlag(Qt::X11BypassWindowManagerHint) || widget->testAttribute(Qt::WA_PaintOnScreen)
         || widget->testAttribute(Qt::WA_NoSystemBackground) || widget->autoFillBackground() || qobject_cast<const QMenu *>(widget)
-        || qobject_cast<const QFrame *>(widget) || widget->inherits("QSplashScreen") || widget->inherits("KScreenSaver"))
+        || qobject_cast<const QFrame *>(widget) || qobject_cast<const QDockWidget *>(widget) || widget->inherits("QSplashScreen") || widget->inherits("KScreenSaver"))
         return false;
     if (widget->property("_mpire_solid").toBool())
         return false;
@@ -160,6 +161,12 @@ void GlassStyle::polish(QWidget *widget)
     if (!widget)
         return;
     if (!widget->isWindow()) {
+        // Made see-through while it had no parent yet (a dock, a toolbar
+        // piece): as a child it paints like any other widget again.
+        if (m_translucent.remove(widget)) {
+            widget->setAttribute(Qt::WA_TranslucentBackground, false);
+            widget->setAttribute(Qt::WA_NoSystemBackground, false);
+        }
         if (m_translucent.contains(widget->window()) && !m_children.contains(widget)) {
             m_children.insert(widget);
             widget->installEventFilter(this);

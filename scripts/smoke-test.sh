@@ -193,6 +193,17 @@ for ((t = 0; t < timeout; t += 5)); do
         qemu_click "$qmp" 900 200 left "$ref"
         sleep 4
         qemu_screenshot "$monitor" "${shot%.ppm}-dock-pinned.ppm"
+        # Frosted-glass app windows over a brighter wallpaper (Lagoon, picked
+        # above): Konsole, then Files (Dolphin), opened from universal search.
+        for app in konsole dolphin; do
+            qemu_key "$monitor" meta_l-spc
+            sleep 3
+            type_text "$app"
+            sleep 2
+            qemu_key "$monitor" ret
+            sleep 12
+        done
+        qemu_screenshot "$monitor" "${shot%.ppm}-glass-apps.ppm"
         grep -a -e MPIREOS_NOTIFY -e MPIREOS_QUICK -e MPIREOS_CENTER -e MPIREOS_SHORTCUT -e MPIREOS_TRAY -e MPIREOS_AI "$log" || true
         exit 0
     fi
