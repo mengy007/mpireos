@@ -149,6 +149,9 @@ int main(int argc, char *argv[])
         QDBusMessage msg = QDBusMessage::createMethodCall(QStringLiteral("org.kde.KSplash"), QStringLiteral("/KSplash"),
                                                           QStringLiteral("org.kde.KSplash"), QStringLiteral("setStage"));
         msg << stage;
+        // Only the running splash: KSplash is D-Bus activatable, so a call
+        // after it has closed would otherwise start a new one.
+        msg.setAutoStartService(false);
         QDBusConnection::sessionBus().asyncCall(msg);
     };
     const auto desktopReady = [splashStage] {

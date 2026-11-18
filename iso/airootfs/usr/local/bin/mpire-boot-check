@@ -124,7 +124,8 @@ ci_open_app() {
 }
 # The splash after login: which one Plasma picked for the live user, and
 # whether it closed when the desktop was up (systemd stops it after 40
-# seconds otherwise, and logs that it timed out).
+# seconds otherwise, and logs that it timed out), without a second splash
+# started by D-Bus activation.
 ci_splash() {
     local cfg; cfg="$(as_live kreadconfig6 --file ksplashrc --group KSplash --key Engine 2>&1) $(as_live kreadconfig6 --file ksplashrc --group KSplash --key Theme 2>&1)"
     report "MPIREOS_SPLASH_LOG config: $cfg"
@@ -134,7 +135,8 @@ ci_splash() {
     if [ "$cfg" = "KSplashQML org.mpireos.desktop" ] \
         && [ -f /usr/share/plasma/look-and-feel/org.mpireos.desktop/contents/splash/Splash.qml ] \
         && ! journalctl -b _UID="$(id -u live)" --no-pager 2>/dev/null | grep -a 'plasma-ksplash.service' \
-            | grep -q -i -e 'timed out' -e 'Failed with result' -e 'Failed to start'; then
+            | grep -q -i -e 'timed out' -e 'Failed with result' -e 'Failed to start' \
+        && ! journalctl -b _UID="$(id -u live)" --no-pager 2>/dev/null | grep -a -q 'Started dbus-.*org.kde.KSplash'; then
         report "MPIREOS_SPLASH_OK"
     else
         report "MPIREOS_SPLASH_FAIL"
