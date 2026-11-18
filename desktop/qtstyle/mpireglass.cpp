@@ -76,7 +76,7 @@ GlassStyle::GlassStyle()
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, QStringLiteral("MpireOS"), QStringLiteral("glass"));
     settings.beginGroup(QStringLiteral("Windows"));
     const bool enabled = settings.value(QStringLiteral("Enabled"), true).toBool();
-    m_opacity = std::clamp(settings.value(QStringLiteral("Opacity"), 0.8).toReal(), 0.0, 1.0);
+    m_opacity = std::clamp(settings.value(QStringLiteral("Opacity"), 0.72).toReal(), 0.0, 1.0);
     m_viewOpacity = std::clamp(settings.value(QStringLiteral("ViewOpacity"), 0.35).toReal(), 0.0, 1.0);
     QStringList exclude = settings.value(QStringLiteral("Exclude"), kDefaultExclude).toStringList();
     for (QString &name : exclude)
@@ -87,6 +87,9 @@ GlassStyle::GlassStyle()
         excluded = excluded || (!name.isEmpty() && exclude.contains(name));
 
     m_enabled = envForce || (wayland && !envOff && enabled && !excluded && m_opacity < 1.0);
+    if (qEnvironmentVariableIsSet("MPIRE_GLASS_DEBUG"))
+        qInfo("mpire-glass: %s for %s (Wayland %d, excluded %d, opacity %.2f)", m_enabled ? "on" : "off",
+              qPrintable(appNames().join(QLatin1Char('/'))), wayland, excluded, m_opacity);
 }
 
 bool GlassStyle::wantsGlass(const QWidget *widget) const
@@ -131,6 +134,8 @@ void GlassStyle::makeTranslucent(const QWidget *widget) const
     auto *w = const_cast<QWidget *>(widget);
     w->setAttribute(Qt::WA_TranslucentBackground);
     m_translucent.insert(widget);
+    if (qEnvironmentVariableIsSet("MPIRE_GLASS_DEBUG"))
+        qInfo("mpire-glass: see-through window %s", widget->metaObject()->className());
     auto *self = const_cast<GlassStyle *>(this);
     connect(w, &QObject::destroyed, self, [self, widget] {
         self->m_translucent.remove(widget);
@@ -152,8 +157,21 @@ bool GlassStyle::isGlass(const QWidget *widget) const
 void GlassStyle::polish(QWidget *widget)
 {
     QProxyStyle::polish(widget);
+    if (!widget)
+        return;
+    if (!widget->isWindow()) {
+        if (m_translucent.contains(widget->window()) && !m_children.contains(widget)) {
+            m_children.insert(widget);
+            widget->installEventFilter(this);
+            connect(widget, &QObject::destroyed, this, [this, widget] {
+                m_children.remove(widget);
+            });
+            tintChild(widget);
+        }
+        return;
+    }
     makeTranslucent(widget);
-    if (!widget || isGlass(widget) || !m_translucent.contains(widget))
+    if (isGlass(widget) || !m_translucent.contains(widget))
         return;
     // A main window whose content fills itself in solid color keeps solid.
     if (auto *mainWindow = qobject_cast<QMainWindow *>(widget)) {
@@ -175,6 +193,8 @@ void GlassStyle::polish(QWidget *widget)
 
 void GlassStyle::unpolish(QWidget *widget)
 {
+    if (widget && m_children.remove(widget))
+        widget->removeEventFilter(this);
     if (isGlass(widget)) {
         widget->removeEventFilter(this);
         m_windows.remove(widget);
@@ -186,20 +206,45 @@ void GlassStyle::unpolish(QWidget *widget)
 }
 
 // Lists, tables, and text areas: the view color as a tint over the glass.
+bool GlassStyle::tintViews(QPalette &palette) const
+{
+    bool changed = false;
+    for (const auto group : {QPalette::Active, QPalette::Inactive, QPalette::Disabled}) {
+        for (const auto role : {QPalette::Base, QPalette::AlternateBase}) {
+            QColor color = palette.color(group, role);
+            if (color.alpha() != 255)
+                continue; // already see-through (tinted, or the app's own choice)
+            color.setAlphaF(m_viewOpacity);
+            palette.setColor(group, role, color);
+            changed = true;
+        }
+    }
+    return changed;
+}
+
 void GlassStyle::applyPalette(QWidget *window)
 {
     if (!window->property(kPaletteProperty).toBool() || m_applyingPalette)
         return;
     m_applyingPalette = true;
     QPalette palette = QApplication::palette(window);
-    for (const auto group : {QPalette::Active, QPalette::Inactive, QPalette::Disabled}) {
-        for (const auto role : {QPalette::Base, QPalette::AlternateBase}) {
-            QColor color = palette.color(group, role);
-            color.setAlphaF(color.alphaF() * m_viewOpacity);
-            palette.setColor(group, role, color);
-        }
-    }
+    tintViews(palette);
     window->setPalette(palette);
+    m_applyingPalette = false;
+}
+
+// A widget inside a glass window with a palette of its own (copied from the
+// app's before the window was glass, as Dolphin's file view does) doesn't
+// inherit the window's tint, so it gets it directly, also when it changes.
+void GlassStyle::tintChild(QWidget *widget)
+{
+    if (m_applyingPalette || !widget->testAttribute(Qt::WA_SetPalette))
+        return;
+    QPalette palette = widget->palette();
+    if (!tintViews(palette))
+        return;
+    m_applyingPalette = true;
+    widget->setPalette(palette);
     m_applyingPalette = false;
 }
 
@@ -216,6 +261,11 @@ void GlassStyle::updateBlur(QWidget *window)
 bool GlassStyle::eventFilter(QObject *object, QEvent *event)
 {
     auto *window = qobject_cast<QWidget *>(object);
+    if (window && m_children.contains(window)) {
+        if (event->type() == QEvent::PaletteChange)
+            tintChild(window);
+        return QProxyStyle::eventFilter(object, event);
+    }
     if (!isGlass(window))
         return QProxyStyle::eventFilter(object, event);
 

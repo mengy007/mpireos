@@ -2,7 +2,7 @@
 # blurs behind (Opacity, Blur), light text, and the brand cyan.
 [General]
 Description=MpireOS Glass
-Opacity=0.8
+Opacity=0.72
 Blur=true
 Wallpaper=
 
