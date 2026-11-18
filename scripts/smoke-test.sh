@@ -59,7 +59,7 @@ for ((t = 0; t < timeout; t += 5)); do
         qemu_key "$monitor" alt-f4
         sleep 8
         qemu_screenshot "$monitor" "${shot%.ppm}-desktop.ppm"
-        # The boot check then opens an app (System Settings) to show window styling.
+        # The boot check then opens an app (Konsole and Dolphin, on frosted glass) to show window styling.
         for ((w = 0; w < 120; w += 5)); do
             grep -q MPIREOS_APP_OPENED "$log" && break
             sleep 5

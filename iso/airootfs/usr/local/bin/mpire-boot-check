@@ -48,7 +48,7 @@ setup_check() {
     return 1
 }
 # CI only (QEMU started with -fw_cfg name=opt/mpireos/ci): once the test has
-# closed the installer, open two app windows (Konsole, then System Settings in
+# closed the installer, open two app windows (Konsole, then Dolphin in
 # front of it) so the window frames, focused and not, and the app colors show
 # up in the test's screenshot.
 ci_open_app() {
@@ -62,12 +62,13 @@ ci_open_app() {
     [ -n "$shell_pid" ] && mapfile -d '' shell_env < "/proc/$shell_pid/environ"
     runuser -u live -- env -i "${shell_env[@]}" konsole >/tmp/ci-konsole.log 2>&1 &
     sleep 6
-    runuser -u live -- env -i "${shell_env[@]}" systemsettings >/tmp/ci-app.log 2>&1 &
+    runuser -u live -- env -i "${shell_env[@]}" dolphin >/tmp/ci-app.log 2>&1 &
     sleep 15
     report "MPIREOS_APP_LOG frames: $(ls /usr/lib/qt6/plugins/org.kde.kdecoration3/ 2>/dev/null | tr '\n' ' ')"
+    report "MPIREOS_APP_LOG style: $(ls /usr/lib/qt6/plugins/styles/ 2>/dev/null | tr '\n' ' ')"
     journalctl -b _UID="$(id -u live)" --no-pager 2>/dev/null | grep -i -e 'decoration' | tail -n 5 \
         | while read -r line; do report "MPIREOS_APP_LOG $line"; done
-    if pgrep -u live -x systemsettings >/dev/null; then report "MPIREOS_APP_RUNNING"; else report "MPIREOS_APP_EXITED"; fi
+    if pgrep -u live -x dolphin >/dev/null; then report "MPIREOS_APP_RUNNING"; else report "MPIREOS_APP_EXITED"; fi
     report "MPIREOS_APP_LOG env: $(printf '%s\n' "${shell_env[@]}" | grep -a -e '^WAYLAND_DISPLAY=' -e '^QT_QPA_PLATFORM=' | tr '\n' ' ')"
     tail -n 15 /tmp/ci-app.log 2>/dev/null | while read -r line; do report "MPIREOS_APP_LOG $line"; done
     report "MPIREOS_APP_OPENED"
@@ -75,7 +76,7 @@ ci_open_app() {
     # Then Mpire Desktop's own panels, one at a time; the test screenshots each.
     as_live() { runuser -u live -- env -i "${shell_env[@]}" "$@"; }
     sleep 20
-    pkill -u live -x systemsettings
+    pkill -u live -x dolphin
     pkill -u live -x konsole
     as_live notify-send -a "Mpire Setup" -i system-software-install -t 60000 \
         "Welcome to MpireOS" "Your desktop is ready. Press Alt+Space to find anything." >/tmp/ci-notify.log 2>&1 \

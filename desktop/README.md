@@ -33,6 +33,9 @@ Not yet: searching inside files (only names), an overflow menu for a crowded tra
 | `shell/surfaces/` | What `mpire-shell` actually shows: background, top bar, dock, panels, notification popups |
 | `src/` | `mpire-shell` (C++, Qt 6, LayerShellQt), including the system tray host (`tray.*`) and the file index (`filesearch.*`) |
 | `tests/tray-test.cpp` | `mpire-tray-test`, a stand-in app with a tray icon and menu |
+| `decoration/` | The Mpire window frames (KWin window decoration) |
+| `qtstyle/` | Mpire Glass, the app style: Breeze with frosted-glass windows (settings in `mpireglass.h`) |
+| `kde/` | Defaults for KDE and Qt apps: color schemes, kdeglobals, KWin, the frosted-glass Konsole profile |
 | `greeter/` | The login screen, as an SDDM theme |
 | `session/` | How the shell and login screen are switched on |
 | `tools/preview.py` | Render any scene without a compositor |

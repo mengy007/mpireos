@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(mpire-desktop VERSION 0.6 LANGUAGES CXX)
+project(mpire-desktop VERSION 0.7 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -61,11 +61,19 @@ option(MPIRE_BUILD_DECORATION "Build the Mpire window frames (needs KDecoration3
 if(MPIRE_BUILD_DECORATION)
     add_subdirectory(decoration)
 endif()
+# Mpire Glass: the widget style for Qt and KDE apps (Breeze, with frosted-glass
+# windows; kde/kdeglobals selects it).
+option(MPIRE_BUILD_GLASS_STYLE "Build the Mpire Glass app style" ON)
+if(MPIRE_BUILD_GLASS_STYLE)
+    add_subdirectory(qtstyle)
+endif()
 # Interim: MpireOS's look for the KDE pieces still in use (KWin title bars,
 # KDE and Qt apps), until our own components replace them.
 install(FILES kde/MpireOS.colors kde/MpireOSDark.colors DESTINATION ${CMAKE_INSTALL_DATADIR}/color-schemes)
-install(FILES kde/kdeglobals kde/kwinrc kde/breezerc kde/ksplashrc kde/kcminputrc
+install(FILES kde/kdeglobals kde/kwinrc kde/breezerc kde/ksplashrc kde/kcminputrc kde/konsolerc
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg)
+# The terminal: a frosted-glass Konsole profile, the default (kde/konsolerc).
+install(FILES kde/konsole/MpireOS.profile kde/konsole/MpireGlass.colorscheme DESTINATION ${CMAKE_INSTALL_DATADIR}/konsole)
 # Meta+Space, Alt+Space, Alt+F2, and Search open universal search: KRunner's
 # entry is shadowed by ours, and Meta+Space has an entry of its own (KDE's
 # global shortcut service reads both directories).

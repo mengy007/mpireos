@@ -1,5 +1,6 @@
 # MpireOS defaults for KDE and Qt apps (system-wide; users can still change them):
-# dark, to match Mpire Desktop's glass, with monospace window titles.
+# dark, to match Mpire Desktop's glass, with monospace window titles. Apps use
+# Mpire Glass (desktop/qtstyle): Breeze, with frosted-glass windows.
 [General]
 ColorScheme=MpireOSDark
 font=Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
@@ -11,7 +12,7 @@ AccentColor=0,180,193
 
 [KDE]
 LookAndFeelPackage=org.mpireos.desktop
-widgetStyle=Breeze
+widgetStyle=MpireGlass
 SingleClick=false
 AnimationDurationFactor=0.8
 
