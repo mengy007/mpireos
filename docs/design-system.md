@@ -196,10 +196,12 @@ The desktop is **just the wallpaper**: no icons, widgets, or greeting, so nothin
 
 **Mpire window frames** (`desktop/decoration`, our own KWin decoration):
 
-- A 34 px title bar of **dark frosted glass** (the color scheme's title bar color at 86%, blurred behind), with a faint light sheen along the top.
+- A 34 px title bar of **dark frosted glass** (the color scheme's title bar color at 62%, blurred behind), with a faint light sheen along the top.
 - The window title in **`fontMono`** (JetBrains Mono, the `[WM]` title font), left aligned, in `text`; dimmer on unfocused windows.
 - Minimize, maximize, and close as **thin line glyphs** on the right (a dash, a square, an ×); hover shows a soft light pill, red under close. No colored traffic lights.
 - **12 px rounded corners** on the whole window (KWin rounds the app's corners too) and a **1 px outline**: white at 14% on unfocused windows, **brand cyan** on the focused one, which also gets a soft **cyan glow** around it. Maximized windows drop the corners and outline.
+
+**App windows are frosted glass too** (`desktop/qtstyle`, the **Mpire Glass** app style, since 0.7): Qt and KDE apps draw their window background in the window color at 62%, see-through, and KWin blurs what's behind, so the title bar and the app read as one pane of glass. Lists, tables, and text areas add a light tint (35%) to keep text easy to read; the menu bar and toolbars a fainter one. Mpire Glass is Breeze for everything else. The terminal (Konsole) has a matching **MpireOS** profile: the same glass at 62% with blur, JetBrains Mono 11, and palette colors with brand cyan. Apps that show pictures or video (VLC, Krita, Kdenlive, OBS, digiKam) keep solid windows; anyone can change the opacity, add apps to that list, or turn glass off in `~/.config/MpireOS/glass.conf`. Not yet: apps built in Qt Quick (System Settings, Discover) and GTK apps (Firefox) still have solid windows.
 
 Inside apps and the shell's panels, tabs are **underline tabs**: monospace labels on a hairline, the current one bright with a 2 px cyan underline (`shell/panels/Tabs.qml`). Sidebars use `surfaceSunken`, with overline section labels (monospace in the dark theme), a `selection`-tinted active item in `accentText`.
 

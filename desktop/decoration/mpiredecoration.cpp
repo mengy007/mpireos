@@ -36,7 +36,7 @@ constexpr qreal kButtonWidth = 28;
 constexpr qreal kButtonHeight = 24;
 constexpr qreal kButtonSpacing = 2;
 constexpr qreal kResizeMargin = 6;       // invisible grab area around the window
-constexpr qreal kTitleOpacity = 0.86;    // frosted: the blur behind shows through
+constexpr qreal kTitleOpacity = 0.62;    // frosted: the blur behind shows through (as the app's glass, qtstyle)
 constexpr int kAnimationMs = 150;
 
 // Brand cyan, from branding/logo (Theme.brand).

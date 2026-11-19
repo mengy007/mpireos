@@ -2,7 +2,7 @@
 # they take priority over /etc/xdg. Pieces this package doesn't provide (lock
 # screen, logout screen) fall back to Breeze until MpireOS's own replace them.
 [kdeglobals][KDE]
-widgetStyle=Breeze
+widgetStyle=MpireGlass
 
 [kdeglobals][General]
 ColorScheme=MpireOSDark

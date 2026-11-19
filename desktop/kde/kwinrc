@@ -13,6 +13,12 @@ BorderSizeAuto=false
 blurEnabled=true
 contrastEnabled=true
 
+# Frosted glass (window frames, app windows, panels): a lighter blur than
+# KWin's default, so shapes behind still show softly, and no noise.
+[Effect-blur]
+BlurStrength=5
+NoiseStrength=0
+
 [Windows]
 BorderlessMaximizedWindows=false
 
